@@ -3,8 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <title>Carte de la valeur ajoutée des lycées</title>
+	<style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .boite {
+            text-align: center;
+            padding: 20px; /* Ajouter un espace intérieur à la boîte */
+            border: 1px solid #ccc; /* Ajouter une bordure pour visualiser la boîte */
+            background-color: #f8f8f8; /* Ajouter une couleur de fond à la boîte */
+        }
+	</style>
 	</head>
 <body>
+<div class="boite">
     <h1>Carte de la valeur ajoutée des lycées 2022</h1>
 	<h2>Légende</h2>
 		<p>Les couleurs des marqueurs correspondent au taux de réussite du lycée en 2022 selon cette répartition :</p>
@@ -40,5 +57,6 @@
     	<h2>La carte</h2>
     <iframe src="ma_carte 2.html" width="1000" height="500" frameborder="0"></iframe>
 	<p>Données : <a href="https://www.data.gouv.fr/fr/datasets/indicateurs-de-valeur-ajoutee-des-lycees-denseignement-general-et-technologique">Data.Gouv.Fr</a> téléchargées le 17 novembre 2023</p>
+</div>
 </body>
 </html>
