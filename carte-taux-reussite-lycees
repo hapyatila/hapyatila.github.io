@@ -22,6 +22,7 @@
 	</head>
 <body>
 <div class="boite">
+	<a href="carte_lycees.html">Retour à la carte globale</a>
     <h1>Carte de la valeur ajoutée des lycées 2022 sur le taux de réussite</h1>
 	<h2>Légende</h2>
 		<p>La valeur ajoutée d'un lycée est un indicateur proposé par le Ministère de l'Education Nationale et de la Jeunesse dans le but d'identifier s'il a fait mieux, pareil ou moins bien que la moyenne française étant donné le profil des élèves qui étaient entrés en seconde en prenant en compte :
