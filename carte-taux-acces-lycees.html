@@ -2,8 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/pico.min.css">
     <title>Carte de la valeur ajoutée des lycées sur le taux d'accès au bac</title>
-	<style>
+	<!--<style>
         body {
             display: flex;
             justify-content: center;
@@ -18,36 +20,38 @@
             background-color: #f8f8f8; /* Ajouter une couleur de fond à la boîte */
 	    width: 80%;
         }
-	</style>
+	</style>-->
 	</head>
 <body>
-<div class="boite">
+<main class="container">
+<!--<div class="boite">-->
 	<a href="carte_lycees.html">Retour à la carte globale</a>
     <h1>Carte de la valeur ajoutée des lycées 2022 sur le taux d'accès au bac</h1>
-	<h2>Légende</h2>
-		<p>La valeur ajoutée d'un lycée est un indicateur proposé par le Ministère de l'Education Nationale et de la Jeunesse dans le but d'identifier s'il a fait mieux, pareil ou moins bien que la moyenne française étant donné le profil des élèves qui étaient entrés en seconde en prenant en compte :
+
+		<p>La valeur ajoutée d'un lycée est un indicateur proposé par le Ministère de l'Education Nationale et de la Jeunesse dans le but d'identifier s'il a fait mieux, pareil ou moins bien que la moyenne française étant donné le profil des élèves qui étaient entrés en seconde en prenant en compte :</p>
 				    <ul><li>l'origine sociale</li>
 					<li>l'âge d'entrée en seconde</li>
 					<li>la moyenne aux épreuves écrites du brevet</li>
 					 <li>le sexe</li>						 
 				     </ul>
-		</p>
+
 		<p><b>La couleur des marqueurs indique la valeur ajoutée du lycée sur son taux d'accès au bac</b> : la proportion d'élèves qui obtiennent le bac lorsqu'ils sont entrés en seconde dans ce lycée.<br> 
 		Le nombre dans le marqueur correspond au taux d'accès au bac du lycée.</p>
 	<table>
 			<tr>
-				<td style="background-color:rgb(255,50,0);">Valeur ajoutée négative</td>
+				<td style="background-color:rgb(255,200,0);">Valeur ajoutée positive</td>
 			</tr>
 			<tr>
 				<td style="background-color:rgb(255,129,0);">Valeur ajoutée nulle</td>
 			</tr>
-			<tr>
-				<td style="background-color:rgb(255,200,0);">Valeur ajoutée positive</td>
+
+        <tr>
+				<td style="background-color:rgb(255,50,0);">Valeur ajoutée négative</td>
 			</tr>
 		</table>
 		
 		<p>Il est possible de sélectionner les établissements "Publics" / "Privés sous contrats" via les calques en haut à droite.</p>
-    	<h2>La carte</h2>
+
     <iframe src="ma_carte_taux_acces.html" width=100% height=700 frameborder="0" align="center"></iframe>
 	<p>Données et méthodologie de calcul de la Valeur Ajoutée : <a href="https://www.data.gouv.fr/fr/datasets/indicateurs-de-valeur-ajoutee-des-lycees-denseignement-general-et-technologique">Data.Gouv.Fr</a> téléchargées le 17 novembre 2023</p>
 
@@ -233,17 +237,9 @@
 </tr>
 
 </table>
-    
 
 
 
-</body>
-</html>
-
-
-</body>
-</html>
-
-</div>
+</main>
 </body>
 </html>
