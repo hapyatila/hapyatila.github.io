@@ -2,8 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Carte de la valeur ajoutée des lycées</title>
-	<style>
+    <link rel="stylesheet" href="/css/pico.min.css">
+	<!--<style>
         body {
             display: flex;
             justify-content: center;
@@ -18,23 +20,36 @@
             background-color: #f8f8f8; /* Ajouter une couleur de fond à la boîte */
 	    width: 80%;
         }
-	</style>
+	</style>-->
 	</head>
 <body>
-<div class="boite">
-	<a href="https://hapyatila-github-io.translate.goog/carte_lycees.html?_x_tr_sl=fr&_x_tr_tl=en&_x_tr_hl=fr&_x_tr_pto=wapp">English Version</a>
-    <h1>Carte de la valeur ajoutée des lycées 2022</h1>
-	<h2>Légende</h2>
+<main class="container">
+<!--<div class="boite">-->
+    <article>
+        <header>
+            <nav>
+              <h1>Carte de la valeur ajoutée des lycées 2022</h1>
+              <ul>
+                <li><a href="https://hapyatila-github-io.translate.goog/carte_lycees.html?_x_tr_sl=fr&_x_tr_tl=en&_x_tr_hl=fr&_x_tr_pto=wapp" role="button">English version</a></li>
+              </ul>
+            </nav>
+       <!-- <a href="https://hapyatila-github-io.translate.goog/carte_lycees.html?_x_tr_sl=fr&_x_tr_tl=en&_x_tr_hl=fr&_x_tr_pto=wapp">English Version</a>
+        <h1>Carte de la valeur ajoutée des lycées 2022</h1>-->
+    </header>
+	<!--<h2>Légende</h2>-->
 		<!-- <p>Les couleurs des marqueurs correspondent à la "valeur ajoutée" des lycées, plus la couleur est foncée, plus le lycée a une grande valeur ajoutée pour ses élèves :</p>
 
 	        <img src="Histo-va-bleu.png" alt="Description de l'image" width="800" height="500">-->
-		<p>La valeur ajoutée d'un lycée est un indicateur proposé par le Ministère de l'Education Nationale et de la Jeunesse dans le but d'identifier s'il a fait mieux, pareil ou moins bien que la moyenne française étant donné le profil des élèves qui étaient entrés en seconde en prenant en compte :
-				    <ul><li>l'origine sociale</li>
-					<li>l'âge d'entrée en seconde</li>
-					<li>la moyenne aux épreuves écrites du brevet</li>
-					 <li>le sexe</li>						 
-				     </ul>
-		</p>
+        <p>La valeur ajoutée d'un lycée est un indicateur proposé par le Ministère de l'Education Nationale et de la
+            Jeunesse dans le but d'identifier s'il a fait mieux, pareil ou moins bien que la moyenne française étant
+            donné le profil des élèves qui étaient entrés en seconde en prenant en compte :</p>
+				    <ul>
+                        <li>l'origine sociale</li>
+					    <li>l'âge d'entrée en seconde</li>
+					    <li>la moyenne aux épreuves écrites du brevet</li>
+					    <li>le sexe</li>
+                    </ul>
+
 		<p>Trois indicateurs sont évalués :</p>
 		<ul>
 			<li><a href="carte-taux-acces-lycees.html">Le taux d'accès au bac</a> : sur 100 élèves entrés en seconde dans ce lycée, combien sont sortis avec le bac</li>
@@ -58,13 +73,14 @@
 		</table>-->
 		
 		<p>Il est possible de sélectionner les établissements "Publics" / "Privés sous contrats" via les calques en haut à droite.</p>
-    	<h2>La carte</h2>
+
     <iframe src="ma_carte_combinee.html" width=100% height=700 frameborder="0" align="center"></iframe>
 	<p>Données et méthodologie de calcul de la Valeur Ajoutée : <a href="https://www.data.gouv.fr/fr/datasets/indicateurs-de-valeur-ajoutee-des-lycees-denseignement-general-et-technologique">Data.Gouv.Fr</a> téléchargées le 17 novembre 2023</p>
 
+        <article>
 <h2>Les 14 lycées qui "apportent le plus de valeur"</h2>
-
-    <table>
+<figure>
+    <table role="grid">
         <thead>
             <tr>
                 <th>Lycée</th>
@@ -160,9 +176,11 @@
             </tr>
         </tbody>
     </table>
-
+    </figure>
+        </article>
+<article>
 	<h2>Les 10 lycées qui "apportent le moins de valeur"</h2>
-    <table>
+    <table role="grid">
         <thead>
             <tr>
                 <th>Lycée</th>
@@ -234,20 +252,28 @@
             </tr>
         </tbody>
     </table>
+        </article>
 
 	<h2>FAQ et Réflexions personnelles</h2>
+        <article>
 	<h3>"C'est une manière d'évaluer la performance des lycées alors que le Ministère ne leur donne pas les moyens de bien faire"</h3>
 	<p>Ce n'est pas en soit une évaluation / un examen, mais plutôt une compétition entre les lycées, puisqu'on les compare avec un lycée "moyen" fictif, ce qui permet aussi de les comparer entre eux. 
 		Cet indicateur de valeur ajoutée ne peut en aucun cas valider si le lycée fait "bien" son travail ou non. 
 		Si tous les lycées faisaient moins bien ou mieux de manière uniforme, cela n'aurait aucun impact sur les valeurs de l'indicateur.</p>
+    </article>
 
+        <article>
 	<h3>"Est-il possible de voir l'évolution de la valeur ajoutée des lycées dans le temps ?"</h3>
 	<p>Aujourd'hui seule la valeur ajoutée 2022 des lycées a été publiée.</p>
+        </article>
 
+        <article>
 	<h3>"Les classes les plus élevées fréquentent-elles surtout les lycées privés ?"</h3>
 	<p>Oui.</p>
 	<img src="nb_lycees_pp.png" alt="Histogramme du nombre de lycées par classe sociale" width="800" height="500">
-	
+	</article>
+
+        <article>
 	<h3>"Dans le rapport PISA, il est écrit que les élèves réussissent mieux dans le public que dans le privé, à origine sociale égale. Retrouve-t-on ce résultat dans ces données ?"</h3>
 	<p>Concernant le taux d'accès au bac, les lycées publics apportent, à origine sociale égale, plus de valeur :</p>
 	<img src="taux_acces_pp.png" alt="Histogramme du nombre de lycées par classe sociale" width="800" height="500">
@@ -257,11 +283,14 @@
 	<img src="taux_mention_pp.png" alt="Histogramme du nombre de lycées par classe sociale" width="800" height="500">
 	<p>Au global les lycées privés et publics obtiennent des résultats analogues, avec un léger mieux pour les lycées publics pour les classes sociales élevées :</p>
 	<img src="taux_global_pp.png" alt="Histogramme du nombre de lycées par classe sociale" width="800" height="500">
-
+</article>
+        <article>
 	<h3>"Quelles précautions faut-il prendre lors de la lecture de cet indicateur ?"</h3>
 	<p>Les taux de succès (accès au bac, réussite et mentions) attendus pour un lycée en fonction de l'origine sociale des élèves sont issus d'un modèle prédictif complexe et n'est pas un oracle absolu. 
 		La valeur ajoutée d'un lycée peut aussi être vue comme l'erreur du modèle prédictif.</p>
-
-</div>
+            </article>
+</article>
+<!--</div>-->
+</main>
 </body>
 </html>
