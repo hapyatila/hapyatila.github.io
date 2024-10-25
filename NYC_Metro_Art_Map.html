@@ -33,7 +33,25 @@
     </article>
 <article>
 	<h2>Methodology</h2>
-	<p>Data: <a href="https://data.ny.gov/browse?category=Transportation">Data.NY.gov</a> downloaded on October 9th 2024</p>
+	<h2>1. Data Download (October 9, 2024):</h2>
+<ul>
+    <li>MTA Permanent Art Catalog: artworks beginning in 1980 - 
+        <a href="https://data.ny.gov/Transportation/MTA-Permanent-Art-Catalog-Beginning-1980/4y8j-9pkd/about_data" target="_blank">Data link</a>
+    </li>
+    <li>MTA Subway Stations - 
+        <a href="https://data.ny.gov/Transportation/MTA-Subway-Stations/39hk-dx4f/about_data" target="_blank">Data link</a>
+    </li>
+</ul>
+
+<h2>2. Data Preparation:</h2>
+<p>Using Python and the <strong>Pandas</strong> library, we matched each artwork from the "Permanent Art Catalog" with its respective station coordinates (latitude and longitude) from the "Subway Stations" dataset. This process enabled us to link each artwork to the precise geographic location of its station.</p>
+
+<h2>3. Creation of the Interactive Map:</h2>
+<p>Using Python's <strong>Folium</strong> library, an interactive map was generated to display the artworks available across the New York subway system.</p>
+<ul>
+    <li>For each station, a pop-up window provides the station name, a link to the artwork’s page, the artwork’s title, artist, and date.</li>
+    <li>Filterable layers allow users to view artworks by decade, giving a chronological perspective on the evolution of public art in the subway network.</li>
+</ul>
 </article>
 </div>
 </main>
