@@ -14,12 +14,13 @@
         }
         .header {
             background-color: #fff;
-            padding: 20px;
+            padding: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             text-align: center;
+            max-height: 60px;
         }
         .logo {
-            max-width: 200px;
+            max-width: 50px;
             height: auto;
         }
         .container {
@@ -138,6 +139,15 @@
             margin-top: 10px;
             margin-bottom: 20px;
         }
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 1.1em;
+            padding: 20px;
+            margin-top: auto;
+            background-color: #fff;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        }
         .loading {
             text-align: center;
             font-style: italic;
@@ -212,6 +222,92 @@
             color: #F38E81;
             text-align: center;
         }
+        .instructions {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        /* Styles pour tablettes */
+        @media screen and (max-width: 1024px) {
+            .header {
+                padding: 4px;
+            }
+            .logo {
+                max-width: 40px;
+            }
+        }
+        /* Styles pour mobiles */
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 10px;
+                margin: 10px auto;
+            }
+            .header {
+                padding: 3px;
+            }
+            .logo {
+                max-width: 30px;
+            }
+            .scan-section {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+            .scanner-container, .result-container {
+                width: 100%;
+            }
+            #interactive.viewport {
+                max-width: 100%;
+            }
+            .product-info {
+                padding: 15px;
+            }
+            .product-info img {
+                max-width: 120px;
+            }
+            .add-button {
+                max-width: 100%;
+            }
+            .copy-buttons {
+                flex-direction: column;
+            }
+            .copy-button {
+                width: 100%;
+                margin: 5px 0;
+            }
+            .products-table {
+                font-size: 14px;
+            }
+            .products-table th, .products-table td {
+                padding: 6px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            h3 {
+                font-size: 1.3em;
+            }
+        }
+        /* Styles pour très petits écrans */
+        @media screen and (max-width: 480px) {
+            .header {
+                padding: 2px;
+            }
+            .logo {
+                max-width: 25px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -220,7 +316,14 @@
     </div>
     <div class="container">
         <h1>MaMaFoodScan</h1>
-        <div class="subtitle">Pour toute idée d'amélioration, contactez Natacha : <a href="mailto:digital@asso-mamama.fr">digital@asso-mamama.fr</a></div>
+        <div class="instructions">
+            <ol>
+                <li>Scannez le code-barres du produit</li>
+                <li>Les informations du produit s'afficheront</li>
+                <li>Cliquez sur "Ajouter" pour l'ajouter au tableau</li>
+                <li>Utilisez les boutons "Copier" pour exporter le tableau dans votre feuille GoogleSheet</li>
+            </ol>
+        </div>
         <div class="scan-section">
             <div class="scanner-container">
                 <div id="interactive" class="viewport"></div>
@@ -242,6 +345,9 @@
             <div id="copyMessage" class="copy-message">Tableau copié !</div>
             <div id="addedProductsList"></div>
         </div>
+    </div>
+    <div class="footer">
+        Pour toute idée d'amélioration, contactez Natacha : <a href="mailto:digital@asso-mamama.fr">digital@asso-mamama.fr</a>
     </div>
 
     <script>
