@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaMaScan - Association MaMaMa</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .scan-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 5px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .scanner-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #interactive.viewport {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0;
+        }
+        #interactive.viewport canvas.drawingBuffer {
+            display: none;
+        }
+        #interactive.viewport canvas, video {
+            width: 100%;
+            max-width: 640px;
+        }
+        #result {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 10px 0;
+            order: 1;
+            color: #333;
+        }
+        .result-container {
+            flex: 1;
+        }
+        .product-info {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .product-info img {
+            max-width: 200px;
+            display: block;
+            margin: 0 auto;
+        }
+        .add-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .add-button:hover {
+            background-color: #45a049;
+        }
+        .add-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .added-products {
+            width: 100%;
+            margin-top: 5px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .products-table th, .products-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .products-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        .products-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .remove-button {
+            padding: 5px 10px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.1em;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+        .nutriscore {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .nutriscore.A { color: #038141; }
+        .nutriscore.B { color: #85BB2F; }
+        .nutriscore.C { color: #FECB02; }
+        .nutriscore.D { color: #EE8100; }
+        .nutriscore.E { color: #E63E11; }
+        .product-details {
+            margin-top: 15px;
+        }
+        .product-details p {
+            margin: 5px 0;
+        }
+        .raw-data {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .raw-data-toggle {
+            display: block;
+            margin: 10px 0;
+            padding: 5px 10px;
+            background-color: #ddd;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .copy-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .copy-button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .copy-button:hover {
+            background-color: #45a049;
+        }
+        .copy-message {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+            display: none;
+        }
+        h1 {
+            color: #F38E81;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://images.squarespace-cdn.com/content/v1/5ec8595ff51b0459bf5c59d8/d36a9706-f7a7-444a-9a13-fb2ee27373e8/mamama_logo.png?format=1500w" alt="Association MaMaMa" class="logo">
+    </div>
+    <div class="container">
+        <h1>MaMaFoodScan</h1>
+        <div class="subtitle">Pour toute idée d'amélioration, contactez Natacha : <a href="mailto:digital@asso-mamama.fr">digital@asso-mamama.fr</a></div>
+        <div class="scan-section">
+            <div class="scanner-container">
+                <div id="interactive" class="viewport"></div>
+                <div id="result"></div>
+            </div>
+            <div class="result-container">
+                <div id="product-info" class="product-info"></div>
+                <button id="addButton" class="add-button" disabled>Ajouter</button>
+            </div>
+        </div>
+        <div class="added-products">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h3>Produits ajoutés :</h3>
+                <div class="copy-buttons">
+                    <button class="copy-button" onclick="copyToClipboard(true)">Copier avec en-têtes</button>
+                    <button class="copy-button" onclick="copyToClipboard(false)">Copier sans en-têtes</button>
+                </div>
+            </div>
+            <div id="copyMessage" class="copy-message">Tableau copié !</div>
+            <div id="addedProductsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentProduct = null;
+        let addedProducts = [];
+
+        function updateAddButton() {
+            const addButton = document.getElementById('addButton');
+            addButton.disabled = !currentProduct;
+        }
+
+        function addProduct() {
+            if (currentProduct) {
+                // Vérifier si le produit n'est pas déjà dans la liste
+                if (!addedProducts.some(p => p.code === currentProduct.code)) {
+                    addedProducts.push({
+                        code: currentProduct.code,
+                        name: currentProduct.product_name,
+                        quantity: currentProduct.quantity || 'Non spécifiée',
+                        units: currentProduct.packagings?.[0]?.number_of_units || 'Non spécifié',
+                        quantityPerUnit: currentProduct.packagings?.[0]?.quantity_per_unit || 'Non spécifiée',
+                        category: currentProduct.categories || 'Non spécifiée'
+                    });
+                    updateAddedProductsList();
+                }
+            }
+        }
+
+        function removeProduct(code) {
+            addedProducts = addedProducts.filter(p => p.code !== code);
+            updateAddedProductsList();
+        }
+
+        function updateAddedProductsList() {
+            const listDiv = document.getElementById('addedProductsList');
+            listDiv.innerHTML = `
+                <table class="products-table">
+                    <thead>
+                        <tr>
+                            <th>Nom du produit</th>
+                            <th>Catégorie</th>
+                            <th>Unités</th>
+                            <th>Quantité par unité</th>
+                            <th>Quantité</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${addedProducts.map(product => `
+                            <tr>
+                                <td>${product.name || 'Produit sans nom'}</td>
+                                <td>${product.category}</td>
+                                <td>${product.units}</td>
+                                <td>${product.quantityPerUnit}</td>
+                                <td>${product.quantity}</td>
+                                <td><button class="remove-button" onclick="removeProduct('${product.code}')">Supprimer</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function copyToClipboard(withHeaders = true) {
+            // Sélectionner le tableau
+            const table = document.querySelector('.products-table');
+            if (!table) {
+                return;
+            }
+
+            // Créer un élément textarea temporaire pour la copie
+            const textarea = document.createElement('textarea');
+            
+            if (withHeaders) {
+                // Copier le tableau complet sans la colonne Action
+                const rows = Array.from(table.rows);
+                textarea.value = rows.map(row => {
+                    const cells = Array.from(row.cells);
+                    // Exclure la dernière colonne (Action)
+                    return cells.slice(0, -1).map(cell => cell.textContent).join('\t');
+                }).join('\n');
+            } else {
+                // Copier uniquement le contenu (sans les en-têtes et sans la colonne Action)
+                const rows = Array.from(table.querySelectorAll('tbody tr'));
+                textarea.value = rows.map(row => {
+                    const cells = Array.from(row.cells);
+                    // Exclure la dernière colonne (Action)
+                    return cells.slice(0, -1).map(cell => cell.textContent).join('\t');
+                }).join('\n');
+            }
+            
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                // Afficher le message de confirmation
+                const message = document.getElementById('copyMessage');
+                message.style.display = 'block';
+                // Masquer le message après 2 secondes
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Erreur lors de la copie : ', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#interactive'),
+                constraints: {
+                    facingMode: "environment"
+                },
+            },
+            decoder: {
+                readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader"]
+            },
+            locate: true,
+            frequency: 5
+        }, function(err) {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            console.log("Initialisation terminée. Prêt à commencer");
+            Quagga.start();
+        });
+
+        async function fetchProductInfo(code) {
+            const productInfoDiv = document.getElementById('product-info');
+            productInfoDiv.innerHTML = '<div class="loading">Recherche des informations...</div>';
+
+            try {
+                const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+                const data = await response.json();
+
+                if (data.status === 1) {
+                    currentProduct = data.product;
+                    window.lastScannedProduct = currentProduct;
+                    updateAddButton();
+                    const nutriscore = currentProduct.nutriscore_grade ? 
+                        `<div class="nutriscore ${currentProduct.nutriscore_grade.toUpperCase()}">Nutri-Score: ${currentProduct.nutriscore_grade.toUpperCase()}</div>` : 
+                        '';
+
+                    productInfoDiv.innerHTML = `
+                        <h2>${currentProduct.product_name || 'Nom non disponible'}</h2>
+                        ${currentProduct.image_url ? `<img src="${currentProduct.image_url}" alt="${currentProduct.product_name}">` : ''}
+                        <div class="product-details">
+                            <p><strong>URL Open Food Facts:</strong> <a href="https://world.openfoodfacts.org/product/${code}" target="_blank">Voir sur Open Food Facts</a></p>
+                            ${currentProduct.packagings && currentProduct.packagings[0] ? `
+                                <p><strong>Nombre d'unités:</strong> ${currentProduct.packagings[0].number_of_units || 'Non spécifié'}</p>
+                                <p><strong>Quantité par unité:</strong> ${currentProduct.packagings[0].quantity_per_unit || 'Non spécifiée'}</p>
+                                <p><strong>Matériau:</strong> ${currentProduct.packagings[0].material || 'Non spécifié'}</p>
+                                <p><strong>Forme:</strong> ${currentProduct.packagings[0].shape || 'Non spécifiée'}</p>
+                            ` : ''}
+                            ${currentProduct.quantity ? `<p><strong>Quantité:</strong> ${currentProduct.quantity}</p>` : ''}
+                            ${currentProduct.categories ? `<p><strong>Catégorie:</strong> ${currentProduct.categories}</p>` : ''}
+                        </div>
+                        <button class="raw-data-toggle" onclick="toggleRawData()">Afficher les données brutes</button>
+                        <div id="rawData" class="raw-data" style="display: none;"></div>
+                    `;
+                    // Afficher les données brutes dans l'interface
+                    document.getElementById('rawData').textContent = JSON.stringify(currentProduct, null, 2);
+                } else {
+                    currentProduct = null;
+                    updateAddButton();
+                    productInfoDiv.innerHTML = '<div class="error">Produit non trouvé dans la base de données Open Food Facts</div>';
+                }
+            } catch (error) {
+                currentProduct = null;
+                updateAddButton();
+                console.error('Erreur:', error);
+                productInfoDiv.innerHTML = '<div class="error">Erreur lors de la recherche du produit</div>';
+            }
+        }
+
+        function toggleRawData() {
+            const rawDataDiv = document.getElementById('rawData');
+            const button = document.querySelector('.raw-data-toggle');
+            if (rawDataDiv.style.display === 'none') {
+                rawDataDiv.style.display = 'block';
+                button.textContent = 'Masquer les données brutes';
+            } else {
+                rawDataDiv.style.display = 'none';
+                button.textContent = 'Afficher les données brutes';
+            }
+        }
+
+        Quagga.onDetected(function(result) {
+            const code = result.codeResult.code;
+            document.getElementById('result').innerHTML = `Code détecté : ${code}`;
+            fetchProductInfo(code);
+        });
+
+        document.getElementById('addButton').addEventListener('click', addProduct);
+    </script>
+</body>
+</html> 
