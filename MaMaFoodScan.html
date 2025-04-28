@@ -22,15 +22,41 @@
             </ol>
         </div>
         <div class="scan-section">
-            <div class="scanner-container">
+            <div id="scanner-view" class="scanner-container">
                 <div id="interactive" class="viewport"></div>
                 <div id="result"></div>
             </div>
-            <div class="result-container">
+            <div id="product-view" class="result-container" style="display: none;">
                 <div id="product-info" class="product-info"></div>
-                <button id="addButton" class="add-button" disabled>Ajouter</button>
+                <div class="button-container">
+                    <button id="addButton" class="add-button" disabled>Ajouter</button>
+                    <button id="newScanButton" class="new-scan-button">Nouveau scan</button>
+                </div>
             </div>
         </div>
+
+        <!-- Popup pour la saisie du nombre -->
+        <div id="quantityPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Combien d'unités ?</h3>
+                <input type="text" id="quantityInput" readonly>
+                <div class="numeric-keypad">
+                    <button onclick="addNumber('1')">1</button>
+                    <button onclick="addNumber('2')">2</button>
+                    <button onclick="addNumber('3')">3</button>
+                    <button onclick="addNumber('4')">4</button>
+                    <button onclick="addNumber('5')">5</button>
+                    <button onclick="addNumber('6')">6</button>
+                    <button onclick="addNumber('7')">7</button>
+                    <button onclick="addNumber('8')">8</button>
+                    <button onclick="addNumber('9')">9</button>
+                    <button onclick="addNumber('0')">0</button>
+                    <button onclick="clearNumber()">C</button>
+                    <button onclick="validateQuantity()">OK</button>
+                </div>
+            </div>
+        </div>
+
         <div class="added-products">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <h3>Produits ajoutés :</h3>
@@ -50,8 +76,26 @@
     <script>
         let currentProduct = null;
         let addedProducts = [];
-        let lastDatabaseUsed = 'beauty'; // Pour alterner entre les bases de données
-        let searchAttempts = 0; // Compteur de tentatives de recherche
+        let lastDatabaseUsed = 'beauty';
+        let searchAttempts = 0;
+
+        // Fonction pour basculer entre les vues
+        function toggleViews(showScanner) {
+            const scannerView = document.getElementById('scanner-view');
+            const productView = document.getElementById('product-view');
+            
+            if (showScanner) {
+                scannerView.style.display = 'flex';
+                productView.style.display = 'none';
+                // Ne pas arrêter le scanner, juste le masquer
+                document.querySelector('#interactive').style.display = 'block';
+            } else {
+                scannerView.style.display = 'none';
+                productView.style.display = 'block';
+                // Masquer le scanner sans l'arrêter
+                document.querySelector('#interactive').style.display = 'none';
+            }
+        }
 
         // Fonction pour attendre un certain temps
         function delay(ms) {
@@ -60,10 +104,12 @@
 
         async function fetchProductInfo(code) {
             const productInfoDiv = document.getElementById('product-info');
-            productInfoDiv.innerHTML = '<div class="loading">Recherche des informations...</div>';
+            // Afficher le message de recherche uniquement lors de la première tentative
+            if (searchAttempts === 0) {
+                productInfoDiv.innerHTML = '<div class="loading">Recherche des informations...</div>';
+            }
 
             try {
-                // Alterner entre les bases de données
                 const database = lastDatabaseUsed === 'beauty' ? 'food' : 'beauty';
                 lastDatabaseUsed = database;
                 searchAttempts++;
@@ -96,15 +142,15 @@
                             <div id="rawData" class="raw-data" style="display: none;"></div>
                         `;
                         document.getElementById('rawData').textContent = JSON.stringify(currentProduct, null, 2);
+                        toggleViews(false);
+                        return; // Sortir de la fonction une fois le produit trouvé
                     } else if (searchAttempts < 2) {
-                        // Attendre 200ms avant de chercher dans l'autre base
                         await delay(200);
                         await fetchProductInfo(code);
                     } else {
                         throw new Error('Produit non trouvé');
                     }
                 } else {
-                    // Recherche dans Open Beauty Facts
                     const response = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${code}.json`);
                     const data = await response.json();
 
@@ -126,8 +172,9 @@
                             <div id="rawData" class="raw-data" style="display: none;"></div>
                         `;
                         document.getElementById('rawData').textContent = JSON.stringify(currentProduct, null, 2);
+                        toggleViews(false);
+                        return; // Sortir de la fonction une fois le produit trouvé
                     } else if (searchAttempts < 2) {
-                        // Attendre 200ms avant de chercher dans l'autre base
                         await delay(200);
                         await fetchProductInfo(code);
                     } else {
@@ -140,7 +187,7 @@
                 console.error('Erreur:', error);
                 productInfoDiv.innerHTML = `<div class="error">Produit non trouvé dans les bases de données</div>`;
             } finally {
-                searchAttempts = 0; // Réinitialiser le compteur après chaque recherche
+                searchAttempts = 0;
             }
         }
 
@@ -151,24 +198,46 @@
 
         function addProduct() {
             if (currentProduct) {
-                // Vérifier si le produit n'est pas déjà dans la liste
                 if (!addedProducts.some(p => p.code === currentProduct.code)) {
-                    // Déterminer la catégorie en fonction de la source
                     let category = currentProduct.categories;
                     if (currentProduct.product_type) {
                         category = currentProduct.product_type;
                     }
 
-                    addedProducts.push({
+                    // Afficher le popup pour la saisie du nombre
+                    document.getElementById('quantityPopup').style.display = 'flex';
+                    document.getElementById('quantityInput').value = '';
+                    
+                    // Stocker temporairement les informations du produit
+                    window.tempProduct = {
                         code: currentProduct.code,
                         name: currentProduct.product_name,
                         quantity: currentProduct.quantity || 'Non spécifiée',
                         units: currentProduct.packagings?.[0]?.number_of_units || 'Non spécifié',
                         quantityPerUnit: currentProduct.packagings?.[0]?.quantity_per_unit || 'Non spécifiée',
                         category: category || 'Non spécifiée'
-                    });
-                    updateAddedProductsList();
+                    };
                 }
+            }
+        }
+
+        function addNumber(num) {
+            const input = document.getElementById('quantityInput');
+            input.value += num;
+        }
+
+        function clearNumber() {
+            document.getElementById('quantityInput').value = '';
+        }
+
+        function validateQuantity() {
+            const quantity = document.getElementById('quantityInput').value;
+            if (quantity && window.tempProduct) {
+                window.tempProduct.number = quantity;
+                addedProducts.push(window.tempProduct);
+                updateAddedProductsList();
+                document.getElementById('quantityPopup').style.display = 'none';
+                toggleViews(true); // Retourner à la vue scanner
             }
         }
 
@@ -188,6 +257,7 @@
                             <th>Unités</th>
                             <th>Quantité par unité</th>
                             <th>Quantité</th>
+                            <th>Nombre</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -199,6 +269,7 @@
                                 <td>${product.units}</td>
                                 <td>${product.quantityPerUnit}</td>
                                 <td>${product.quantity}</td>
+                                <td>${product.number || '1'}</td>
                                 <td><button class="remove-button" onclick="removeProduct('${product.code}')">Supprimer</button></td>
                             </tr>
                         `).join('')}
@@ -266,6 +337,12 @@
             }
         }
 
+        // Ajouter l'écouteur d'événement pour le bouton "Nouveau scan"
+        document.getElementById('newScanButton').addEventListener('click', () => {
+            toggleViews(true);
+        });
+
+        // Initialiser le scanner au démarrage
         Quagga.init({
             inputStream: {
                 name: "Live",
@@ -279,13 +356,13 @@
                 readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader"]
             },
             locate: true,
-            frequency: 5
+            frequency: 4
         }, function(err) {
             if (err) {
                 console.error(err);
                 return;
             }
-            console.log("Initialisation terminée. Prêt à commencer");
+            console.log("Scanner initialisé");
             Quagga.start();
         });
 
@@ -296,6 +373,11 @@
         });
 
         document.getElementById('addButton').addEventListener('click', addProduct);
+
+        // Arrêter le scanner quand la page est quittée
+        window.addEventListener('beforeunload', function() {
+            Quagga.stop();
+        });
     </script>
 </body>
 </html> 
