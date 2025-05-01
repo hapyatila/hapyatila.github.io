@@ -6,6 +6,68 @@
     <title>MaMaScan - Association MaMaMa</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <link rel="stylesheet" href="MaMaStyle.css">
+    <style>
+        .edit-button, .remove-button {
+            background-color: #FF69B4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100px;
+            margin: 0 4px;
+        }
+
+        .edit-button:hover, .remove-button:hover {
+            background-color: #FF1493;
+        }
+
+        .remove-button {
+            background-color: #dc3545;
+        }
+
+        .remove-button:hover {
+            background-color: #c82333;
+        }
+
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .viewport {
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        /* Style pour les zones de texte dans les popups */
+        .popup input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .popup-content {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -35,24 +97,189 @@
             </div>
         </div>
 
-        <!-- Popup pour la saisie du nombre -->
+        <!-- Popup pour la saisie du nombre d'unités -->
+        <div id="unitsPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Nombre d'unités dans le paquet</h3>
+                <p class="subtitle">Si produit seul, indiquer 1</p>
+                <input type="text" id="unitsInput" readonly>
+                <div class="numeric-keypad">
+                    <button onclick="addNumber('1', 'units')">1</button>
+                    <button onclick="addNumber('2', 'units')">2</button>
+                    <button onclick="addNumber('3', 'units')">3</button>
+                    <button onclick="addNumber('4', 'units')">4</button>
+                    <button onclick="addNumber('5', 'units')">5</button>
+                    <button onclick="addNumber('6', 'units')">6</button>
+                    <button onclick="addNumber('7', 'units')">7</button>
+                    <button onclick="addNumber('8', 'units')">8</button>
+                    <button onclick="addNumber('9', 'units')">9</button>
+                    <button onclick="addNumber('0', 'units')">0</button>
+                    <button onclick="clearNumber('units')">C</button>
+                    <button onclick="validateUnits()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour la saisie du poids -->
+        <div id="weightPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Poids du paquet en grammes</h3>
+                <input type="text" id="weightInput" readonly>
+                <div class="numeric-keypad">
+                    <button onclick="addNumber('1', 'weight')">1</button>
+                    <button onclick="addNumber('2', 'weight')">2</button>
+                    <button onclick="addNumber('3', 'weight')">3</button>
+                    <button onclick="addNumber('4', 'weight')">4</button>
+                    <button onclick="addNumber('5', 'weight')">5</button>
+                    <button onclick="addNumber('6', 'weight')">6</button>
+                    <button onclick="addNumber('7', 'weight')">7</button>
+                    <button onclick="addNumber('8', 'weight')">8</button>
+                    <button onclick="addNumber('9', 'weight')">9</button>
+                    <button onclick="addNumber('0', 'weight')">0</button>
+                    <button onclick="clearNumber('weight')">C</button>
+                    <button onclick="validateWeight()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour la saisie du nombre de paquets -->
         <div id="quantityPopup" class="popup" style="display: none;">
             <div class="popup-content">
-                <h3>Combien d'unités ?</h3>
+                <h3>Nombre de paquets</h3>
                 <input type="text" id="quantityInput" readonly>
                 <div class="numeric-keypad">
-                    <button onclick="addNumber('1')">1</button>
-                    <button onclick="addNumber('2')">2</button>
-                    <button onclick="addNumber('3')">3</button>
-                    <button onclick="addNumber('4')">4</button>
-                    <button onclick="addNumber('5')">5</button>
-                    <button onclick="addNumber('6')">6</button>
-                    <button onclick="addNumber('7')">7</button>
-                    <button onclick="addNumber('8')">8</button>
-                    <button onclick="addNumber('9')">9</button>
-                    <button onclick="addNumber('0')">0</button>
-                    <button onclick="clearNumber()">C</button>
+                    <button onclick="addNumber('1', 'quantity')">1</button>
+                    <button onclick="addNumber('2', 'quantity')">2</button>
+                    <button onclick="addNumber('3', 'quantity')">3</button>
+                    <button onclick="addNumber('4', 'quantity')">4</button>
+                    <button onclick="addNumber('5', 'quantity')">5</button>
+                    <button onclick="addNumber('6', 'quantity')">6</button>
+                    <button onclick="addNumber('7', 'quantity')">7</button>
+                    <button onclick="addNumber('8', 'quantity')">8</button>
+                    <button onclick="addNumber('9', 'quantity')">9</button>
+                    <button onclick="addNumber('0', 'quantity')">0</button>
+                    <button onclick="clearNumber('quantity')">C</button>
                     <button onclick="validateQuantity()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour les produits non trouvés -->
+        <div id="notFoundPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Produit non trouvé</h3>
+                <p>Veuillez sélectionner le type de produit :</p>
+                <div class="button-container" style="margin-top: 20px;">
+                    <button class="category-button" onclick="selectCategory('food')">Alimentaire</button>
+                    <button class="category-button" onclick="selectCategory('beauty')">Hygiène</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour la catégorie alimentaire -->
+        <div id="foodCategoryPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Sélectionnez la catégorie alimentaire</h3>
+                <div class="button-container" style="margin-top: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <button class="category-button" onclick="selectFoodCategory('Lait 1')">Lait 1</button>
+                    <button class="category-button" onclick="selectFoodCategory('Lait 2')">Lait 2</button>
+                    <button class="category-button" onclick="selectFoodCategory('Lait 3')">Lait 3</button>
+                    <button class="category-button" onclick="selectFoodCategory('Lait 4')">Lait 4</button>
+                    <button class="category-button" onclick="selectFoodCategory('Plat 4m+')">Plat 4m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Plat 6m+')">Plat 6m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Plat 8m+')">Plat 8m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Plat 12m+')">Plat 12m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Lactés 4m+')">Lactés 4m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Lactés 6m+')">Lactés 6m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Lactés 12m+')">Lactés 12m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Compotes 4m+')">Compotes 4m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Compotes 6m+')">Compotes 6m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Compotes 12m+')">Compotes 12m+</button>
+                    <button class="category-button" onclick="selectFoodCategory('Céréales 6m+')">Céréales 6m+</button>
+                    <button class="category-button" onclick="showOtherFoodCategory()">Autre</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour la catégorie "Autre" -->
+        <div id="otherFoodCategoryPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Précisez la catégorie</h3>
+                <input type="text" id="otherFoodCategoryInput" placeholder="Entrez la catégorie">
+                <div class="button-container" style="margin-top: 20px;">
+                    <button class="category-button" onclick="validateOtherFoodCategory()">Valider</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour la saisie du nom du produit -->
+        <div id="namePopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Nom du produit</h3>
+                <input type="text" id="nameInput" placeholder="Entrez le nom du produit">
+                <div class="button-container" style="margin-top: 20px;">
+                    <button class="category-button" onclick="validateName()">Valider</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour la modification du produit -->
+        <div id="editPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Modifier le produit</h3>
+                <div class="edit-form">
+                    <div class="form-group">
+                        <label for="editName">Nom du produit</label>
+                        <input type="text" id="editName" placeholder="Nom du produit">
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategory">Catégorie</label>
+                        <input type="text" id="editCategory" placeholder="Catégorie">
+                    </div>
+                    <div class="form-group">
+                        <label for="editUnits">Unités/paquet</label>
+                        <input type="text" id="editUnits" placeholder="Nombre d'unités">
+                    </div>
+                    <div class="form-group">
+                        <label for="editWeight">Poids (g)</label>
+                        <input type="text" id="editWeight" placeholder="Poids en grammes">
+                    </div>
+                    <div class="form-group">
+                        <label for="editQuantity">Nombre de paquets</label>
+                        <input type="text" id="editQuantity" placeholder="Nombre de paquets">
+                    </div>
+                </div>
+                <div class="button-container" style="margin-top: 20px;">
+                    <button class="category-button" onclick="saveEdit()">Enregistrer</button>
+                    <button class="category-button" onclick="cancelEdit()">Annuler</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour la catégorie hygiène -->
+        <div id="hygieneCategoryPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Sélectionnez la catégorie d'hygiène</h3>
+                <div class="button-container" style="margin-top: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <button class="category-button" onclick="selectHygieneCategory('Couches T1')">Couches T1</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Couches T2')">Couches T2</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Couches T3')">Couches T3</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Couches T4')">Couches T4</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Couches T5')">Couches T5</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Couches T6')">Couches T6</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Liniment')">Liniment</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Cotons')">Cotons</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Lingettes')">Lingettes</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Gel lavant bébé')">Gel lavant bébé</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Lait de toilette')">Lait de toilette</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Cotons-tiges')">Cotons-tiges</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Brosse à dent')">Brosse à dent</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Dentifrice')">Dentifrice</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Déodorant')">Déodorant</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Serviettes hygiéniques')">Serviettes hygiéniques</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Shampoing adulte')">Shampoing adulte</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Shampoing bébé')">Shampoing bébé</button>
+                    <button class="category-button" onclick="selectHygieneCategory('Sérum physiologique')">Sérum physiologique</button>
                 </div>
             </div>
         </div>
@@ -78,6 +305,44 @@
         let addedProducts = [];
         let lastDatabaseUsed = 'beauty';
         let searchAttempts = 0;
+        let previousResults = null;
+        let notFoundProduct = null;
+        let editingProduct = null;
+        let localProducts = null;
+
+        // Fonction pour charger le fichier CSV
+        async function loadLocalProducts() {
+            try {
+                const response = await fetch('products.csv');
+                const csvText = await response.text();
+                const lines = csvText.split('\n');
+                localProducts = {};
+                
+                // Ignorer l'en-tête et traiter chaque ligne
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        const [code, name, category, units, weight] = line.split(',');
+                        if (code) {
+                            localProducts[code] = {
+                                code: code,
+                                name: name || 'Produit sans nom',
+                                category: category || 'Inconnu',
+                                units: units || 'inconnu',
+                                weight: weight || 'inconnu'
+                            };
+                        }
+                    }
+                }
+                console.log('Produits locaux chargés:', localProducts);
+            } catch (error) {
+                console.error('Erreur lors du chargement du fichier CSV:', error);
+                localProducts = {};
+            }
+        }
+
+        // Charger les produits locaux au démarrage
+        loadLocalProducts();
 
         // Fonction pour basculer entre les vues
         function toggleViews(showScanner) {
@@ -102,92 +367,247 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        async function fetchProductInfo(code) {
-            const productInfoDiv = document.getElementById('product-info');
-            // Afficher le message de recherche uniquement lors de la première tentative
-            if (searchAttempts === 0) {
-                productInfoDiv.innerHTML = '<div class="loading">Recherche des informations...</div>';
+        function selectCategory(category) {
+            if (notFoundProduct) {
+                if (category === 'food') {
+                    document.getElementById('notFoundPopup').style.display = 'none';
+                    document.getElementById('namePopup').style.display = 'flex';
+                    document.getElementById('nameInput').value = '';
+                } else {
+                    notFoundProduct.category = 'Hygiène';
+                    notFoundProduct.units = '1';
+                    notFoundProduct.weight = '0';
+                    document.getElementById('notFoundPopup').style.display = 'none';
+                    document.getElementById('namePopup').style.display = 'flex';
+                    document.getElementById('nameInput').value = '';
+                }
+            }
+        }
+
+        function selectFoodCategory(category) {
+            if (notFoundProduct) {
+                notFoundProduct.category = category;
+                document.getElementById('foodCategoryPopup').style.display = 'none';
+                document.getElementById('unitsPopup').style.display = 'flex';
+                document.getElementById('unitsInput').value = '';
+            }
+        }
+
+        function showOtherFoodCategory() {
+            document.getElementById('foodCategoryPopup').style.display = 'none';
+            document.getElementById('otherFoodCategoryPopup').style.display = 'flex';
+            document.getElementById('otherFoodCategoryInput').value = '';
+        }
+
+        function validateOtherFoodCategory() {
+            const category = document.getElementById('otherFoodCategoryInput').value.trim();
+            if (category) {
+                notFoundProduct.category = category;
+                window.tempProduct = notFoundProduct;
+                document.getElementById('otherFoodCategoryPopup').style.display = 'none';
+                document.getElementById('quantityPopup').style.display = 'flex';
+                document.getElementById('quantityInput').value = '';
+            }
+        }
+
+        function validateName() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (name) {
+                notFoundProduct.name = name;
+                document.getElementById('namePopup').style.display = 'none';
+                
+                if (notFoundProduct.category === 'Hygiène') {
+                    document.getElementById('hygieneCategoryPopup').style.display = 'flex';
+                } else {
+                    document.getElementById('foodCategoryPopup').style.display = 'flex';
+                }
+            }
+        }
+
+        function selectHygieneCategory(category) {
+            if (notFoundProduct) {
+                notFoundProduct.category = category;
+                document.getElementById('hygieneCategoryPopup').style.display = 'none';
+                document.getElementById('unitsPopup').style.display = 'flex';
+                document.getElementById('unitsInput').value = '';
+            }
+        }
+
+        function isValidBarcode(code) {
+            // Vérifier si c'est un code numérique
+            if (!/^\d+$/.test(code)) {
+                return false;
             }
 
+            // Vérifier les formats courants
+            const length = code.length;
+            if (length === 13) { // EAN-13
+                return true;
+            } else if (length === 8) { // EAN-8
+                return true;
+            } else if (length === 12) { // UPC-A
+                return true;
+            } else if (length >= 6 && length <= 8) { // UPC-E
+                return true;
+            }
+
+            return false;
+        }
+
+        function showInvalidBarcodePopup() {
+            const productInfoDiv = document.getElementById('product-info');
+            productInfoDiv.innerHTML = `
+                <div class="error">Format de code-barres non reconnu</div>
+                <div class="button-container" style="margin-top: 20px;">
+                    <button class="add-button" onclick="showNotFoundPopup('')">Ajouter manuellement</button>
+                </div>
+            `;
+            toggleViews(false);
+        }
+
+        async function fetchProductInfo(code) {
+            const productInfoDiv = document.getElementById('product-info');
+            productInfoDiv.innerHTML = '<div class="loading">Recherche des informations...</div>';
+            toggleViews(false);
+
             try {
-                const database = lastDatabaseUsed === 'beauty' ? 'food' : 'beauty';
-                lastDatabaseUsed = database;
-                searchAttempts++;
+                // Vérifier d'abord dans les produits locaux
+                if (localProducts && localProducts[code]) {
+                    const localProduct = localProducts[code];
+                    currentProduct = localProduct;
+                    window.lastScannedProduct = currentProduct;
+                    updateAddButton();
+                    
+                    window.tempProduct = {
+                        code: localProduct.code,
+                        name: localProduct.name,
+                        category: localProduct.category,
+                        units: localProduct.units,
+                        weight: localProduct.weight,
+                        date: new Date().toLocaleString('fr-FR')
+                    };
+                    
+                    const html = `
+                        <h2>${localProduct.name}</h2>
+                        <div class="product-details">
+                            <p><strong>Catégorie:</strong> ${localProduct.category}</p>
+                            <p><strong>Unités par paquet:</strong> ${localProduct.units}</p>
+                            <p><strong>Poids:</strong> ${localProduct.weight}</p>
+                        </div>
+                    `;
 
-                if (database === 'food') {
-                    const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-                    const data = await response.json();
-
-                    if (data.status === 1) {
-                        currentProduct = data.product;
-                        window.lastScannedProduct = currentProduct;
-                        updateAddButton();
-                        const nutriscore = currentProduct.nutriscore_grade ? 
-                            `<div class="nutriscore ${currentProduct.nutriscore_grade.toUpperCase()}">Nutri-Score: ${currentProduct.nutriscore_grade.toUpperCase()}</div>` : 
-                            '';
-
-                        productInfoDiv.innerHTML = `
-                            <h2>${currentProduct.product_name || 'Nom non disponible'}</h2>
-                            ${currentProduct.image_url ? `<img src="${currentProduct.image_url}" alt="${currentProduct.product_name}">` : ''}
-                            <div class="product-details">
-                                <p><strong>URL Open Food Facts:</strong> <a href="https://world.openfoodfacts.org/product/${code}" target="_blank">Voir sur Open Food Facts</a></p>
-                                ${currentProduct.packagings && currentProduct.packagings[0] ? `
-                                    <p><strong>Nombre d'unités:</strong> ${currentProduct.packagings[0].number_of_units || 'Non spécifié'}</p>
-                                    <p><strong>Quantité par unité:</strong> ${currentProduct.packagings[0].quantity_per_unit || 'Non spécifiée'}</p>
-                                ` : ''}
-                                ${currentProduct.quantity ? `<p><strong>Quantité:</strong> ${currentProduct.quantity}</p>` : ''}
-                                ${currentProduct.categories ? `<p><strong>Catégorie:</strong> ${currentProduct.categories}</p>` : ''}
-                            </div>
-                            <button class="raw-data-toggle" onclick="toggleRawData()">Afficher les données brutes</button>
-                            <div id="rawData" class="raw-data" style="display: none;"></div>
-                        `;
-                        document.getElementById('rawData').textContent = JSON.stringify(currentProduct, null, 2);
-                        toggleViews(false);
-                        return; // Sortir de la fonction une fois le produit trouvé
-                    } else if (searchAttempts < 2) {
-                        await delay(200);
-                        await fetchProductInfo(code);
-                    } else {
-                        throw new Error('Produit non trouvé');
-                    }
-                } else {
-                    const response = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${code}.json`);
-                    const data = await response.json();
-
-                    if (data.status === 1) {
-                        currentProduct = data.product;
-                        window.lastScannedProduct = currentProduct;
-                        updateAddButton();
-                        
-                        productInfoDiv.innerHTML = `
-                            <h2>${currentProduct.product_name || 'Nom non disponible'}</h2>
-                            ${currentProduct.image_url ? `<img src="${currentProduct.image_url}" alt="${currentProduct.product_name}">` : ''}
-                            <div class="product-details">
-                                <p><strong>URL Open Beauty Facts:</strong> <a href="https://world.openbeautyfacts.org/product/${code}" target="_blank">Voir sur Open Beauty Facts</a></p>
-                                ${currentProduct.brands ? `<p><strong>Marque:</strong> ${currentProduct.brands}</p>` : ''}
-                                ${currentProduct.categories ? `<p><strong>Catégorie:</strong> ${currentProduct.categories}</p>` : ''}
-                                ${currentProduct.quantity ? `<p><strong>Quantité:</strong> ${currentProduct.quantity}</p>` : ''}
-                            </div>
-                            <button class="raw-data-toggle" onclick="toggleRawData()">Afficher les données brutes</button>
-                            <div id="rawData" class="raw-data" style="display: none;"></div>
-                        `;
-                        document.getElementById('rawData').textContent = JSON.stringify(currentProduct, null, 2);
-                        toggleViews(false);
-                        return; // Sortir de la fonction une fois le produit trouvé
-                    } else if (searchAttempts < 2) {
-                        await delay(200);
-                        await fetchProductInfo(code);
-                    } else {
-                        throw new Error('Produit non trouvé');
-                    }
+                    productInfoDiv.innerHTML = html;
+                    return;
                 }
+
+                // Si pas trouvé localement, chercher dans les bases de données externes
+                // Essayer d'abord la base alimentaire
+                const foodResponse = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+                const foodData = await foodResponse.json();
+
+                if (foodData.status === 1) {
+                    currentProduct = foodData.product;
+                    window.lastScannedProduct = currentProduct;
+                    updateAddButton();
+                    
+                    // Extraire les informations pour le tableau
+                    const units = currentProduct.packagings?.[0]?.number_of_units || '1';
+                    const weight = currentProduct.quantity ? 
+                        (currentProduct.quantity.match(/\d+/)?.[0] || '0') : '0';
+                    
+                    // Stocker les informations pour l'ajout au tableau
+                    window.tempProduct = {
+                        code: currentProduct.code,
+                        name: currentProduct.product_name || 'Produit sans nom',
+                        category: currentProduct.categories || 'Alimentaire',
+                        units: units,
+                        weight: weight,
+                        date: new Date().toLocaleString('fr-FR')
+                    };
+                    
+                    const html = `
+                        <h2>${currentProduct.product_name || 'Nom non disponible'}</h2>
+                        ${currentProduct.image_url ? `<img src="${currentProduct.image_url}" alt="${currentProduct.product_name}">` : ''}
+                        <div class="product-details">
+                            <p><strong>URL Open Food Facts:</strong> <a href="https://world.openfoodfacts.org/product/${code}" target="_blank">Voir sur Open Food Facts</a></p>
+                            ${currentProduct.packagings && currentProduct.packagings[0] ? `
+                                <p><strong>Nombre d'unités:</strong> ${currentProduct.packagings[0].number_of_units || 'Non spécifié'}</p>
+                                <p><strong>Quantité par unité:</strong> ${currentProduct.packagings[0].quantity_per_unit || 'Non spécifiée'}</p>
+                            ` : ''}
+                            ${currentProduct.quantity ? `<p><strong>Quantité:</strong> ${currentProduct.quantity}</p>` : ''}
+                            ${currentProduct.categories ? `<p><strong>Catégorie:</strong> ${currentProduct.categories}</p>` : ''}
+                        </div>
+                        <button class="raw-data-toggle" onclick="toggleRawData()">Afficher les données brutes</button>
+                        <div id="rawData" class="raw-data" style="display: none;"></div>
+                    `;
+
+                    productInfoDiv.innerHTML = html;
+                    document.getElementById('rawData').textContent = JSON.stringify(currentProduct, null, 2);
+                    return;
+                }
+
+                // Si pas trouvé dans la base alimentaire, essayer la base hygiène
+                const beautyResponse = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${code}.json`);
+                const beautyData = await beautyResponse.json();
+
+                if (beautyData.status === 1) {
+                    currentProduct = beautyData.product;
+                    window.lastScannedProduct = currentProduct;
+                    updateAddButton();
+                    
+                    // Extraire les informations pour le tableau
+                    const units = currentProduct.quantity || 'inconnu';
+                    const weight = currentProduct.quantity ? 
+                        (currentProduct.quantity.match(/\d+/)?.[0] || 'inconnu') : 'inconnu';
+                    
+                    // Stocker les informations pour l'ajout au tableau
+                    window.tempProduct = {
+                        code: currentProduct.code,
+                        name: currentProduct.product_name || 'Produit sans nom',
+                        category: 'Hygiène',
+                        units: units,
+                        weight: weight,
+                        date: new Date().toLocaleString('fr-FR')
+                    };
+                    
+                    const html = `
+                        <h2>${currentProduct.product_name || 'Nom non disponible'}</h2>
+                        ${currentProduct.image_url ? `<img src="${currentProduct.image_url}" alt="${currentProduct.product_name}">` : ''}
+                        <div class="product-details">
+                            <p><strong>URL Open Beauty Facts:</strong> <a href="https://world.openbeautyfacts.org/product/${code}" target="_blank">Voir sur Open Beauty Facts</a></p>
+                            ${currentProduct.brands ? `<p><strong>Marque:</strong> ${currentProduct.brands}</p>` : ''}
+                            ${currentProduct.categories ? `<p><strong>Catégorie:</strong> ${currentProduct.categories}</p>` : ''}
+                            ${currentProduct.quantity ? `<p><strong>Quantité:</strong> ${currentProduct.quantity}</p>` : ''}
+                        </div>
+                        <button class="raw-data-toggle" onclick="toggleRawData()">Afficher les données brutes</button>
+                        <div id="rawData" class="raw-data" style="display: none;"></div>
+                    `;
+
+                    productInfoDiv.innerHTML = html;
+                    document.getElementById('rawData').textContent = JSON.stringify(currentProduct, null, 2);
+                    return;
+                }
+
+                // Si pas trouvé dans les deux bases, demander les caractéristiques
+                currentProduct = null;
+                updateAddButton();
+                productInfoDiv.innerHTML = `
+                    <div class="error">Produit non trouvé dans les bases de données</div>
+                    <div class="button-container" style="margin-top: 20px;">
+                        <button class="add-button" onclick="showNotFoundPopup('${code}')">Ajouter manuellement</button>
+                    </div>
+                `;
+
             } catch (error) {
                 currentProduct = null;
                 updateAddButton();
                 console.error('Erreur:', error);
-                productInfoDiv.innerHTML = `<div class="error">Produit non trouvé dans les bases de données</div>`;
-            } finally {
-                searchAttempts = 0;
+                productInfoDiv.innerHTML = `
+                    <div class="error">Erreur lors de la recherche du produit</div>
+                    <div class="button-container" style="margin-top: 20px;">
+                        <button class="add-button" onclick="showNotFoundPopup('${code}')">Ajouter manuellement</button>
+                    </div>
+                `;
             }
         }
 
@@ -199,35 +619,41 @@
         function addProduct() {
             if (currentProduct) {
                 if (!addedProducts.some(p => p.code === currentProduct.code)) {
-                    let category = currentProduct.categories;
-                    if (currentProduct.product_type) {
-                        category = currentProduct.product_type;
-                    }
-
-                    // Afficher le popup pour la saisie du nombre
+                    // Afficher le popup pour la saisie du nombre de paquets
                     document.getElementById('quantityPopup').style.display = 'flex';
                     document.getElementById('quantityInput').value = '';
-                    
-                    // Stocker temporairement les informations du produit
-                    window.tempProduct = {
-                        code: currentProduct.code,
-                        name: currentProduct.product_name,
-                        quantity: currentProduct.quantity || 'Non spécifiée',
-                        units: currentProduct.packagings?.[0]?.number_of_units || 'Non spécifié',
-                        quantityPerUnit: currentProduct.packagings?.[0]?.quantity_per_unit || 'Non spécifiée',
-                        category: category || 'Non spécifiée'
-                    };
                 }
             }
         }
 
-        function addNumber(num) {
-            const input = document.getElementById('quantityInput');
+        function addNumber(num, type) {
+            const input = document.getElementById(`${type}Input`);
             input.value += num;
         }
 
-        function clearNumber() {
-            document.getElementById('quantityInput').value = '';
+        function clearNumber(type) {
+            document.getElementById(`${type}Input`).value = '';
+        }
+
+        function validateUnits() {
+            const units = document.getElementById('unitsInput').value;
+            if (units) {
+                notFoundProduct.units = units;
+                document.getElementById('unitsPopup').style.display = 'none';
+                document.getElementById('weightPopup').style.display = 'flex';
+                document.getElementById('weightInput').value = '';
+            }
+        }
+
+        function validateWeight() {
+            const weight = document.getElementById('weightInput').value;
+            if (weight) {
+                notFoundProduct.weight = weight;
+                window.tempProduct = notFoundProduct;
+                document.getElementById('weightPopup').style.display = 'none';
+                document.getElementById('quantityPopup').style.display = 'flex';
+                document.getElementById('quantityInput').value = '';
+            }
         }
 
         function validateQuantity() {
@@ -237,13 +663,45 @@
                 addedProducts.push(window.tempProduct);
                 updateAddedProductsList();
                 document.getElementById('quantityPopup').style.display = 'none';
-                toggleViews(true); // Retourner à la vue scanner
+                toggleViews(true);
             }
         }
 
         function removeProduct(code) {
             addedProducts = addedProducts.filter(p => p.code !== code);
             updateAddedProductsList();
+        }
+
+        function editProduct(code) {
+            const product = addedProducts.find(p => p.code === code);
+            if (product) {
+                editingProduct = product;
+                document.getElementById('editName').value = product.name;
+                document.getElementById('editCategory').value = product.category;
+                document.getElementById('editUnits').value = product.units;
+                document.getElementById('editWeight').value = product.weight;
+                document.getElementById('editQuantity').value = product.number || '1';
+                document.getElementById('editPopup').style.display = 'flex';
+            }
+        }
+
+        function saveEdit() {
+            if (editingProduct) {
+                editingProduct.name = document.getElementById('editName').value.trim();
+                editingProduct.category = document.getElementById('editCategory').value.trim();
+                editingProduct.units = document.getElementById('editUnits').value.trim();
+                editingProduct.weight = document.getElementById('editWeight').value.trim();
+                editingProduct.number = document.getElementById('editQuantity').value.trim();
+                
+                updateAddedProductsList();
+                document.getElementById('editPopup').style.display = 'none';
+                editingProduct = null;
+            }
+        }
+
+        function cancelEdit() {
+            document.getElementById('editPopup').style.display = 'none';
+            editingProduct = null;
         }
 
         function updateAddedProductsList() {
@@ -254,11 +712,11 @@
                         <tr>
                             <th>Nom du produit</th>
                             <th>Catégorie</th>
-                            <th>Unités</th>
-                            <th>Quantité par unité</th>
-                            <th>Quantité</th>
-                            <th>Nombre</th>
-                            <th>Action</th>
+                            <th>Unités/paquet</th>
+                            <th>Poids (g)</th>
+                            <th>Nombre de paquets</th>
+                            <th>Date</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -267,10 +725,13 @@
                                 <td>${product.name || 'Produit sans nom'}</td>
                                 <td>${product.category}</td>
                                 <td>${product.units}</td>
-                                <td>${product.quantityPerUnit}</td>
-                                <td>${product.quantity}</td>
+                                <td>${product.weight}</td>
                                 <td>${product.number || '1'}</td>
-                                <td><button class="remove-button" onclick="removeProduct('${product.code}')">Supprimer</button></td>
+                                <td>${product.date}</td>
+                                <td>
+                                    <button class="edit-button" onclick="editProduct('${product.code}')">Modifier</button>
+                                    <button class="remove-button" onclick="removeProduct('${product.code}')">Supprimer</button>
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -337,6 +798,18 @@
             }
         }
 
+        function showNotFoundPopup(code) {
+            notFoundProduct = {
+                code: code,
+                name: 'Produit non trouvé',
+                quantity: 'Non spécifiée',
+                units: 'Non spécifié',
+                quantityPerUnit: 'Non spécifiée',
+                date: new Date().toLocaleString('fr-FR')
+            };
+            document.getElementById('notFoundPopup').style.display = 'flex';
+        }
+
         // Ajouter l'écouteur d'événement pour le bouton "Nouveau scan"
         document.getElementById('newScanButton').addEventListener('click', () => {
             toggleViews(true);
@@ -351,6 +824,7 @@
                 constraints: {
                     facingMode: "environment"
                 },
+                willReadFrequently: true
             },
             decoder: {
                 readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader"]
@@ -369,7 +843,12 @@
         Quagga.onDetected(function(result) {
             const code = result.codeResult.code;
             document.getElementById('result').innerHTML = `Code détecté : ${code}`;
-            fetchProductInfo(code);
+            
+            if (isValidBarcode(code)) {
+                fetchProductInfo(code);
+            } else {
+                showInvalidBarcodePopup();
+            }
         });
 
         document.getElementById('addButton').addEventListener('click', addProduct);
