@@ -607,3 +607,64 @@ h1 {
 .result-card .product-details a:hover {
     text-decoration: underline;
 }
+
+.edit-button, .remove-button {
+    background-color: #FF69B4;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100px;
+    margin: 0 4px;
+}
+
+.edit-button:hover, .remove-button:hover {
+    background-color: #FF1493;
+}
+
+.remove-button {
+    background-color: #dc3545;
+}
+
+.remove-button:hover {
+    background-color: #c82333;
+}
+
+.scanner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.viewport {
+    width: 100%;
+    max-width: 640px;
+    height: 480px;
+    position: relative;
+    margin: 0 auto;
+}
+
+/* Style pour les zones de texte dans les popups */
+.popup input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.popup-content {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    box-sizing: border-box;
+}
