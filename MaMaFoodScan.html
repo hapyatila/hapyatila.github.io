@@ -253,23 +253,6 @@
         let editingProduct = null;
         let localProducts = null;
 
-        // Fonction pour charger le fichier CSV par défaut
-        async function loadDefaultCSV() {
-            try {
-                const response = await fetch('products.csv');
-                if (!response.ok) {
-                    throw new Error('Fichier non trouvé');
-                }
-                const csvText = await response.text();
-                processCSVText(csvText);
-                console.log('Fichier CSV par défaut chargé avec succès');
-            } catch (error) {
-                console.log('Impossible de charger le fichier CSV par défaut:', error);
-                // Afficher le bouton de chargement manuel
-                document.getElementById('csvUploadSection').style.display = 'block';
-            }
-        }
-
         // Fonction pour traiter le texte CSV
         function processCSVText(csvText) {
             const lines = csvText.split('\n');
@@ -294,6 +277,27 @@
                 }
             }
             console.log('Produits locaux chargés:', localProducts);
+            // Vérifier si un produit est déjà scanné
+            if (window.lastScannedCode) {
+                fetchProductInfo(window.lastScannedCode);
+            }
+        }
+
+        // Fonction pour charger le fichier CSV par défaut
+        async function loadDefaultCSV() {
+            try {
+                const response = await fetch('products.csv');
+                if (!response.ok) {
+                    throw new Error('Fichier non trouvé');
+                }
+                const csvText = await response.text();
+                processCSVText(csvText);
+                console.log('Fichier CSV par défaut chargé avec succès');
+            } catch (error) {
+                console.log('Impossible de charger le fichier CSV par défaut:', error);
+                // Afficher le bouton de chargement manuel
+                document.getElementById('csvUploadSection').style.display = 'block';
+            }
         }
 
         // Fonction pour charger le fichier CSV localement
@@ -825,6 +829,7 @@
         Quagga.onDetected(function(result) {
             const code = result.codeResult.code;
             document.getElementById('result').innerHTML = `Code détecté : ${code}`;
+            window.lastScannedCode = code; // Stocker le code pour le cas où le CSV n'est pas encore chargé
             
             if (isValidBarcode(code)) {
                 fetchProductInfo(code);
