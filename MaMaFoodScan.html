@@ -502,8 +502,8 @@
 
                 // Si pas trouvé localement, chercher dans les bases de données externes
                 // Essayer d'abord la base alimentaire
-                const foodResponse = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-                const foodData = await foodResponse.json();
+                // const foodResponse = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+                // const foodData = await foodResponse.json();
 
                 if (foodData.status === 1) {
                     currentProduct = foodData.product;
@@ -547,8 +547,8 @@
                 }
 
                 // Si pas trouvé dans la base alimentaire, essayer la base hygiène
-                const beautyResponse = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${code}.json`);
-                const beautyData = await beautyResponse.json();
+                // const beautyResponse = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${code}.json`);
+                // const beautyData = await beautyResponse.json();
 
                 if (beautyData.status === 1) {
                     currentProduct = beautyData.product;
