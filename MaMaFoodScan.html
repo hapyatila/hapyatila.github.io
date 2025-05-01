@@ -233,6 +233,7 @@
                 <div class="copy-buttons">
                     <button class="copy-button" onclick="copyToClipboard(true)">Copier avec en-têtes</button>
                     <button class="copy-button" onclick="copyToClipboard(false)">Copier sans en-têtes</button>
+                    <button class="remove-button" onclick="deleteAllProducts()">Tout supprimer</button>
                 </div>
             </div>
             <div id="copyMessage" class="copy-message">Tableau copié !</div>
@@ -252,6 +253,29 @@
         let notFoundProduct = null;
         let editingProduct = null;
         let localProducts = null;
+
+        // Charger les produits depuis le localStorage au démarrage
+        function loadProductsFromStorage() {
+            const savedProducts = localStorage.getItem('addedProducts');
+            if (savedProducts) {
+                addedProducts = JSON.parse(savedProducts);
+                updateAddedProductsList();
+            }
+        }
+
+        // Sauvegarder les produits dans le localStorage
+        function saveProductsToStorage() {
+            localStorage.setItem('addedProducts', JSON.stringify(addedProducts));
+        }
+
+        // Fonction pour supprimer tous les produits
+        function deleteAllProducts() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer tous les produits ?')) {
+                addedProducts = [];
+                localStorage.removeItem('addedProducts');
+                updateAddedProductsList();
+            }
+        }
 
         // Fonction pour traiter le texte CSV
         function processCSVText(csvText) {
@@ -314,6 +338,9 @@
 
         // Charger le fichier CSV par défaut au démarrage
         loadDefaultCSV();
+
+        // Charger les produits au démarrage
+        loadProductsFromStorage();
 
         // Fonction pour basculer entre les vues
         function toggleViews(showScanner) {
@@ -648,6 +675,7 @@
                 window.tempProduct.number = quantity;
                 addedProducts.push(window.tempProduct);
                 updateAddedProductsList();
+                saveProductsToStorage();
                 document.getElementById('quantityPopup').style.display = 'none';
                 toggleViews(true);
             }
@@ -656,6 +684,7 @@
         function removeProduct(code) {
             addedProducts = addedProducts.filter(p => p.code !== code);
             updateAddedProductsList();
+            saveProductsToStorage();
         }
 
         function editProduct(code) {
@@ -680,6 +709,7 @@
                 editingProduct.number = document.getElementById('editQuantity').value.trim();
                 
                 updateAddedProductsList();
+                saveProductsToStorage();
                 document.getElementById('editPopup').style.display = 'none';
                 editingProduct = null;
             }
@@ -723,6 +753,7 @@
                     </tbody>
                 </table>
             `;
+            saveProductsToStorage();
         }
 
         function copyToClipboard(withHeaders = true) {
