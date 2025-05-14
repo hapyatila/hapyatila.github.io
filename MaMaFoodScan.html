@@ -176,6 +176,10 @@
                         <input type="text" id="editName" placeholder="Nom du produit">
                     </div>
                     <div class="form-group">
+                        <label for="editCode">Code-barres</label>
+                        <input type="text" id="editCode" placeholder="Code-barres">
+                    </div>
+                    <div class="form-group">
                         <label for="editCategory">Catégorie</label>
                         <input type="text" id="editCategory" placeholder="Catégorie">
                     </div>
@@ -223,6 +227,17 @@
                     <button class="category-button" onclick="selectHygieneCategory('Shampoing adulte')">Shampoing adulte</button>
                     <button class="category-button" onclick="selectHygieneCategory('Shampoing bébé')">Shampoing bébé</button>
                     <button class="category-button" onclick="selectHygieneCategory('Sérum physiologique')">Sérum physiologique</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ajouter le popup pour la saisie du code-barres -->
+        <div id="barcodePopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <h3>Code-barres du produit</h3>
+                <input type="text" id="barcodeInput" placeholder="Entrez le code-barres">
+                <div class="button-container" style="margin-top: 20px;">
+                    <button class="category-button" onclick="validateBarcode()">Valider</button>
                 </div>
             </div>
         </div>
@@ -692,6 +707,7 @@
             if (product) {
                 editingProduct = product;
                 document.getElementById('editName').value = product.name;
+                document.getElementById('editCode').value = product.code || '';
                 document.getElementById('editCategory').value = product.category;
                 document.getElementById('editUnits').value = product.units;
                 document.getElementById('editWeight').value = product.weight;
@@ -703,6 +719,7 @@
         function saveEdit() {
             if (editingProduct) {
                 editingProduct.name = document.getElementById('editName').value.trim();
+                editingProduct.code = document.getElementById('editCode').value.trim();
                 editingProduct.category = document.getElementById('editCategory').value.trim();
                 editingProduct.units = document.getElementById('editUnits').value.trim();
                 editingProduct.weight = document.getElementById('editWeight').value.trim();
@@ -727,6 +744,7 @@
                     <thead>
                         <tr>
                             <th>Nom du produit</th>
+                            <th>Code-barres</th>
                             <th>Catégorie</th>
                             <th>Unités/paquet</th>
                             <th>Poids (g)</th>
@@ -739,6 +757,7 @@
                         ${addedProducts.map(product => `
                             <tr>
                                 <td>${product.name || 'Produit sans nom'}</td>
+                                <td>${product.code || '-'}</td>
                                 <td>${product.category}</td>
                                 <td>${product.units}</td>
                                 <td>${product.weight}</td>
@@ -824,7 +843,18 @@
                 quantityPerUnit: 'Non spécifiée',
                 date: new Date().toLocaleString('fr-FR')
             };
-            document.getElementById('notFoundPopup').style.display = 'flex';
+            document.getElementById('barcodePopup').style.display = 'flex';
+            document.getElementById('barcodeInput').value = code || '';
+        }
+
+        function validateBarcode() {
+            const barcode = document.getElementById('barcodeInput').value.trim();
+            if (barcode) {
+                notFoundProduct.code = barcode;
+                document.getElementById('barcodePopup').style.display = 'none';
+                document.getElementById('namePopup').style.display = 'flex';
+                document.getElementById('nameInput').value = '';
+            }
         }
 
         // Ajouter l'écouteur d'événement pour le bouton "Nouveau scan"
