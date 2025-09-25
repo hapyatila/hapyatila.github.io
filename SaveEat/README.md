@@ -1,137 +1,82 @@
-# SaveEat - Recipe Manager
+# SaveEat - Static Version for GitHub Pages
 
-A web application for managing recipes extracted from URLs, with features for organizing, editing, and generating recipe books.
+Cette version statique de SaveEat fonctionne parfaitement avec GitHub Pages. Elle utilise le localStorage du navigateur pour sauvegarder les recettes.
 
-## Features
+## 🚀 Déploiement sur GitHub Pages
 
-- **Recipe Extraction**: Automatically extract recipe data from URLs using web scraping
-- **Recipe Management**: View, edit, and organize recipes with status tracking
-- **Search & Filter**: Find recipes by name, ingredients, or status
-- **Shopping List**: Print ingredients from selected recipes
-- **Recipe Book Generation**: Create PDF books with selected recipes and email them
+### 1. Préparer les fichiers
+1. Copie tous les fichiers du dossier `static-version/` à la racine de ton repository GitHub
+2. Renomme `static-version/index.html` en `index.html` à la racine
 
-## Setup
+### 2. Activer GitHub Pages
+1. Va dans **Settings** de ton repository
+2. Scroll jusqu'à **Pages** dans le menu de gauche
+3. Sous **Source**, sélectionne **Deploy from a branch**
+4. Choisis **main** branch et **/ (root)**
+5. Clique **Save**
 
-### Prerequisites
+### 3. Accéder à ton site
+Ton site sera disponible à : `https://hapyatila.github.io/SaveEat/`
 
-- Python 3.7+
-- pip
+## 📱 Configuration iPhone Shortcut
 
-### Installation
+1. **Shortcuts** → **Nouveau raccourci**
+2. **Ouvrir des URLs** → `https://hapyatila.github.io/SaveEat/?url=[URL]`
+3. **Ajouter au menu Partager**
 
-1. Clone or download the project files
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## ✨ Fonctionnalités
 
-3. Run the application:
-   ```bash
-   python app.py
-   ```
+### ✅ **Fonctionnalités disponibles**
+- ✅ Ajout manuel de recettes
+- ✅ Réception via URL (iPhone Shortcut)
+- ✅ Gestion des recettes (éditer, supprimer)
+- ✅ Recherche et filtres
+- ✅ Statuts (To Cook, Validated, Rejected)
+- ✅ Impression des ingrédients
+- ✅ Export/Import des données
+- ✅ Sauvegarde locale (localStorage)
 
-4. Open your browser and go to `http://localhost:5000`
+### ❌ **Fonctionnalités non disponibles (limitations GitHub Pages)**
+- ❌ Extraction automatique depuis les URLs
+- ❌ Génération de PDF
+- ❌ Envoi d'emails
 
-## Usage
+## 🔧 Alternatives pour les fonctionnalités manquantes
 
-### Adding Recipes
+### **Extraction de recettes**
+- **Option 1** : Ajout manuel (disponible)
+- **Option 2** : Utiliser un service comme Zapier + Airtable
+- **Option 3** : Déployer sur Heroku/Railway avec la version Python
 
-1. **Via Web Interface**: 
-   - Click "Add Recipe" 
-   - Paste the recipe URL
-   - Click "Extract Recipe"
+### **Génération de PDF**
+- **Option 1** : Utiliser l'impression du navigateur
+- **Option 2** : Service externe comme PDFShift
+- **Option 3** : Déployer sur Heroku/Railway
 
-2. **Via iPhone Shortcut**:
-   - Set up a shortcut that opens: `https://your-domain.com/newRecipe?url=[URL]`
-   - Share recipe URLs from any app
-
-### Managing Recipes
-
-- **View**: Browse all recipes with search and filter options
-- **Edit**: Click "Edit" on any recipe to modify details
-- **Status**: Change status to "To Cook", "Validated", or "Rejected"
-- **Comments**: Add personal notes to recipes
-
-### Actions
-
-- **Print Ingredients**: Select recipes and print shopping lists
-- **Generate Book**: Create PDF books with selected recipes
-
-## File Structure
+## 📁 Structure des fichiers
 
 ```
 SaveEat/
-├── app.py                 # Flask backend
-├── requirements.txt       # Python dependencies
-├── templates/            # HTML templates
-│   ├── index.html
-│   └── new_recipe.html
-├── static/               # CSS and JavaScript
-│   ├── style.css
-│   └── script.js
-├── URL_Recipes.csv       # URLs to be processed
-├── Recipes.csv           # Extracted recipe data
-└── README.md
+├── index.html          # Page principale
+├── style.css           # Styles
+├── script.js           # Logique JavaScript
+└── README.md           # Documentation
 ```
 
-## Configuration
+## 💾 Sauvegarde des données
 
-### Email Settings (for PDF generation)
+Les recettes sont sauvegardées dans le localStorage du navigateur. Pour sauvegarder tes données :
 
-Edit `app.py` and update the email configuration:
+1. Clique sur **Export Recipes**
+2. Sauvegarde le fichier JSON
+3. Pour restaurer : **Import Recipes** → sélectionne le fichier
 
-```python
-smtp_server = "smtp.gmail.com"
-smtp_port = 587
-sender_email = "your-email@gmail.com"
-sender_password = "your-app-password"
-```
+## 🎯 Prochaines étapes
 
-### iPhone Shortcut Setup
+Si tu veux les fonctionnalités complètes (extraction automatique, PDF, email) :
 
-1. Open Shortcuts app
-2. Create new shortcut
-3. Add "Open URLs" action
-4. Set URL to: `https://your-domain.com/newRecipe?url=[URL]`
-5. Add to Share Sheet
+1. **Déployer sur Heroku** (gratuit) avec la version Python
+2. **Utiliser Railway** (gratuit) avec la version Python
+3. **Combiner** : GitHub Pages + services externes (Zapier, etc.)
 
-## API Endpoints
-
-- `GET /api/recipes` - Get all recipes
-- `POST /api/extract-recipe` - Extract recipe from URL
-- `PUT /api/recipes/<id>` - Update recipe
-- `POST /api/generate-book` - Generate PDF book
-
-## Data Storage
-
-Recipes are stored in CSV files:
-- `URL_Recipes.csv`: URLs to be processed
-- `Recipes.csv`: Extracted recipe data with columns:
-  - ID, Name, Ingredients, Instructions, Number_of_portions
-  - Date_of_registered, URL, Status, Comment
-
-## Troubleshooting
-
-### Recipe Extraction Issues
-
-- Some websites may block scraping
-- Try different recipe URLs
-- Check console for error messages
-
-### Email Issues
-
-- Verify SMTP settings
-- Use app passwords for Gmail
-- Check firewall settings
-
-## Development
-
-To extend the application:
-
-1. **Add new recipe sources**: Modify `extract_recipe_data()` in `app.py`
-2. **Customize UI**: Edit `static/style.css` and `static/script.js`
-3. **Add features**: Extend the Flask routes in `app.py`
-
-## License
-
-This project is open source and available under the MIT License.
+Veux-tu que je t'aide à déployer la version Python sur Heroku ou Railway ?

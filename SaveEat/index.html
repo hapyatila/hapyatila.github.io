@@ -25,7 +25,23 @@
                         <label for="recipeUrl">Recipe URL:</label>
                         <input type="url" id="recipeUrl" name="url" required placeholder="https://example.com/recipe">
                     </div>
-                    <button type="submit" class="btn btn-primary">Extract Recipe</button>
+                    <div class="form-group">
+                        <label for="recipeName">Recipe Name:</label>
+                        <input type="text" id="recipeName" name="name" required placeholder="Enter recipe name">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeIngredients">Ingredients:</label>
+                        <textarea id="recipeIngredients" name="ingredients" rows="6" required placeholder="List ingredients..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeInstructions">Instructions:</label>
+                        <textarea id="recipeInstructions" name="instructions" rows="8" required placeholder="Enter cooking instructions..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipePortions">Number of Portions:</label>
+                        <input type="number" id="recipePortions" name="portions" min="1" value="4" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Recipe</button>
                 </form>
                 <div id="extractionStatus" class="status hidden"></div>
             </div>
@@ -51,7 +67,9 @@
                     </div>
                     <div class="actions">
                         <button id="printIngredients" class="btn btn-secondary">Print Selected Ingredients</button>
-                        <button id="generateBook" class="btn btn-primary">Generate Recipe Book</button>
+                        <button id="exportData" class="btn btn-primary">Export Recipes</button>
+                        <button id="importData" class="btn btn-secondary">Import Recipes</button>
+                        <input type="file" id="fileInput" accept=".json" style="display: none;">
                     </div>
                 </div>
 
