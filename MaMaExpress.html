@@ -12,13 +12,6 @@
     </div>
     <div class="container">
         <h1>MaMaExpress</h1>
-        <div class="instructions">
-            <ol>
-                <li>Sélectionnez les PMI à visiter dans la liste</li>
-                <li>Cliquez sur "Calculer le meilleur itinéraire"</li>
-                <li>Visualisez l'itinéraire optimisé</li>
-            </ol>
-        </div>
         
         <div class="input-section">
             <div class="address-input">
@@ -33,19 +26,20 @@
                 <div id="pmiList" class="pmi-list">
                     <p style="color: #666;">Chargement des données...</p>
                 </div>
-                <p id="selectedCount" class="selected-count">0 PMI sélectionnée(s)</p>
+                <div id="selectedPmiList" style="margin-top: 15px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
+                    <strong id="selectedPmiTitle" style="display: block; margin-bottom: 8px; color: #2C3E50;">PMI sélectionnées :</strong>
+                    <div id="selectedPmiItems" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; color: #555;"></div>
+                </div>
             </div>
             <button id="calculateButton" class="calculate-button">Calculer le meilleur itinéraire</button>
         </div>
 
-        <div id="logs" class="logs-section" style="display: none;">
-            <h3>Calcul en cours :</h3>
-            <div id="logContent" class="log-content"></div>
-        </div>
-
         <div id="results" class="results-section" style="display: none;">
             <div class="routes-list">
-                <h3>Itinéraire optimisé :</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Itinéraire optimisé</h3>
+                    <div id="googleMapsButton"></div>
+                </div>
                 <div id="routes"></div>
             </div>
         </div>
@@ -69,18 +63,6 @@
         
         // Stockage persistant des indices de PMI sélectionnées (même si elles ne sont pas dans le filtre actuel)
         let selectedPmiIndices = new Set();
-
-        /**
-         * Ajoute un message dans la zone de logs
-         */
-        function addLog(message) {
-            const logContent = document.getElementById('logContent');
-            const logEntry = document.createElement('div');
-            logEntry.className = 'log-entry';
-            logEntry.textContent = message;
-            logContent.appendChild(logEntry);
-            logContent.scrollTop = logContent.scrollHeight;
-        }
 
         /**
          * Initialise les données depuis les variables JavaScript
@@ -121,9 +103,6 @@
             for (const [key, value] of Object.entries(PMI_DUREES)) {
                 dureesMap.set(key, value);
             }
-            
-            document.getElementById('pmiList').innerHTML = 
-                `<p style="color: green;">✓ Données chargées avec succès ! ${allPmis.length} PMI disponibles.</p>`;
         }
 
         /**
@@ -238,12 +217,39 @@
         }
 
         /**
-         * Met à jour le compteur de PMI sélectionnées
+         * Met à jour le compteur de PMI sélectionnées et affiche la liste
          * Utilise le Set global pour compter toutes les sélections, même celles non visibles
          */
         function updateSelectedCount() {
             const selected = selectedPmiIndices.size;
-            document.getElementById('selectedCount').textContent = `${selected} PMI sélectionnée(s)`;
+            
+            // Afficher la liste des PMI sélectionnées
+            const selectedPmiListDiv = document.getElementById('selectedPmiList');
+            const selectedPmiTitle = document.getElementById('selectedPmiTitle');
+            const selectedPmiItemsUl = document.getElementById('selectedPmiItems');
+            
+            if (selected === 0) {
+                selectedPmiListDiv.style.display = 'none';
+            } else {
+                selectedPmiListDiv.style.display = 'block';
+                // Mettre à jour le titre avec le nombre de PMI sélectionnées
+                selectedPmiTitle.textContent = `${selected} PMI sélectionnée(s) :`;
+                selectedPmiItemsUl.innerHTML = '';
+                
+                // Trier les indices pour un affichage cohérent
+                const sortedIndices = Array.from(selectedPmiIndices).sort((a, b) => a - b);
+                
+                sortedIndices.forEach(index => {
+                    if (allPmis[index]) {
+                        const div = document.createElement('div');
+                        div.style.padding = '5px';
+                        div.style.fontSize = '14px';
+                        const pmi = allPmis[index];
+                        div.textContent = pmi.nom || pmi.address;
+                        selectedPmiItemsUl.appendChild(div);
+                    }
+                });
+            }
         }
 
         /**
@@ -302,40 +308,55 @@
         }
 
         /**
+         * Récupère l'ID d'une adresse depuis le mapping
+         * @param {string} address - Adresse à rechercher
+         * @returns {number|null} ID de l'adresse ou null si non trouvée
+         */
+        function getAddressId(address) {
+            if (!address || typeof PMI_ADDRESS_TO_ID === 'undefined') {
+                return null;
+            }
+            // Recherche directe
+            let id = PMI_ADDRESS_TO_ID[address];
+            if (id !== undefined) {
+                return id;
+            }
+            // Recherche dans les PMI_ADDRESSES si l'adresse correspond
+            if (typeof PMI_ADDRESSES !== 'undefined') {
+                for (const pmi of PMI_ADDRESSES) {
+                    if (pmi.address === address) {
+                        return pmi.id;
+                    }
+                }
+            }
+            // Vérifier si c'est l'adresse MaMaMa
+            if (typeof MAMAMA_ADDRESS !== 'undefined' && address === MAMAMA_ADDRESS) {
+                return typeof MAMAMA_ID !== 'undefined' ? MAMAMA_ID : null;
+            }
+            return null;
+        }
+
+        /**
          * Récupère la durée entre deux adresses depuis la map des durées
-         * Retourne la durée en minutes, ou Infinity si non trouvée
+         * Utilise les IDs pour la recherche, ce qui est plus rapide et fiable
+         * @param {string} adresse1 - Première adresse
+         * @param {string} adresse2 - Deuxième adresse
+         * @returns {number} Durée en minutes, ou Infinity si non trouvée
          */
         function getDuree(adresse1, adresse2) {
-            // Essai 1 : correspondance exacte
-            const key = `${adresse1}|${adresse2}`;
-            let duree = dureesMap.get(key);
-            if (duree !== undefined) {
-                return duree;
+            // Obtenir les IDs des adresses
+            const id1 = getAddressId(adresse1);
+            const id2 = getAddressId(adresse2);
+            
+            if (id1 === null || id2 === null) {
+                return Infinity;
             }
             
-            // Essai 2 : correspondance avec normalisation
-            let foundMatch = false;
-            let similarAddresses1 = [];
-            let similarAddresses2 = [];
+            // Rechercher avec les IDs
+            const key = `${id1}|${id2}`;
+            const duree = dureesMap.get(key);
             
-            for (const [mapKey, mapValue] of dureesMap.entries()) {
-                const [addr1, addr2] = mapKey.split('|');
-                
-                // Chercher des correspondances partielles pour debug
-                if (addressesMatch(addr1, adresse1)) {
-                    similarAddresses1.push(addr1);
-                }
-                if (addressesMatch(addr2, adresse2)) {
-                    similarAddresses2.push(addr2);
-                }
-                
-                if (addressesMatch(addr1, adresse1) && addressesMatch(addr2, adresse2)) {
-                    foundMatch = true;
-                    return mapValue;
-                }
-            }
-            
-            return Infinity; // Non trouvée
+            return duree !== undefined ? duree : Infinity;
         }
 
         /**
@@ -344,7 +365,6 @@
          * Retourne l'ordre des indices des waypoints
          */
         async function calculateOptimalOrder(waypoints) {
-            addLog('Calcul de l\'ordre optimal à partir des durées précalculées...');
             
             // Vérifier que les durées sont chargées
             if (dureesMap.size === 0) {
@@ -378,18 +398,6 @@
                 }
             }
             
-            if (dureesManquantes > 0) {
-                addLog(`⚠ ${dureesManquantes} durée(s) non trouvée(s) dans la base de données`);
-                // Afficher les détails des durées manquantes
-                const uniqueMissing = new Set();
-                missingPairs.forEach(pair => {
-                    const key = `${pair.fromName || pair.from} ↔ ${pair.toName || pair.to}`;
-                    uniqueMissing.add(key);
-                });
-                if (uniqueMissing.size > 0) {
-                    addLog(`   Durées manquantes : ${Array.from(uniqueMissing).join(', ')}`);
-                }
-            }
 
             // Algorithme du plus proche voisin : toujours aller au point le plus proche non visité
             const visited = new Set([0]); // Commencer par le point de départ (index 0)
@@ -420,13 +428,54 @@
                         }
                     }
                     if (nextPoint === -1) break;
-                    addLog(`⚠ Utilisation d'un point sans durée connue`);
                 }
                 
                 visited.add(nextPoint);
                 order.push(nextPoint);
             }
                 
+            // Amélioration avec l'algorithme 2-opt
+            let amelioration = true;
+            while (amelioration) {
+                amelioration = false;
+                const n = order.length;
+                
+                for (let i = 0; i < n - 2; i++) {
+                    for (let j = i + 2; j < n - 1; j++) {
+                        // Calculer le gain potentiel de l'inversion du segment [i+1 ... j]
+                        // gain = d(i,i+1) + d(j,j+1) - d(i,j) - d(i+1,j+1)
+                        const d_i_i1 = dureesMatrix[order[i]][order[i + 1]];
+                        const d_j_j1 = dureesMatrix[order[j]][order[j + 1]];
+                        const d_i_j = dureesMatrix[order[i]][order[j]];
+                        const d_i1_j1 = dureesMatrix[order[i + 1]][order[j + 1]];
+                        
+                        // Ignorer si certaines durées sont infinies
+                        if (d_i_i1 === Infinity || d_j_j1 === Infinity || 
+                            d_i_j === Infinity || d_i1_j1 === Infinity) {
+                            continue;
+                        }
+                        
+                        const gain = d_i_i1 + d_j_j1 - d_i_j - d_i1_j1;
+                        
+                        if (gain > 0) {
+                            // Inverser le segment [i+1 ... j]
+                            let start = i + 1;
+                            let end = j;
+                            while (start < end) {
+                                const temp = order[start];
+                                order[start] = order[end];
+                                order[end] = temp;
+                                start++;
+                                end--;
+                            }
+                            amelioration = true;
+                            break; // Sortir de la boucle j
+                        }
+                    }
+                    if (amelioration) break; // Sortir de la boucle i
+                }
+            }
+            
             // Calculer la durée totale de l'itinéraire (sans le retour pour l'instant)
             let dureeTotale = 0;
             for (let i = 0; i < order.length - 1; i++) {
@@ -436,7 +485,6 @@
                 }
             }
             
-            addLog(`✓ Ordre optimal calculé`);
             return order;
         }
 
@@ -454,9 +502,6 @@
                 calculateButton.style.cursor = 'not-allowed';
             }
             
-            // Afficher immédiatement la section des logs avec un message de chargement
-            document.getElementById('logContent').innerHTML = '<div class="log-entry" style="color: #0066cc; font-weight: bold;">⏳ Calcul en cours, veuillez patienter...</div>';
-            document.getElementById('logs').style.display = 'block';
             document.getElementById('results').style.display = 'none';
 
             // Récupérer les PMI sélectionnées depuis le Set global
@@ -475,10 +520,6 @@
                 return;
             }
 
-            // Réinitialiser l'interface et afficher le message de début
-            document.getElementById('logContent').innerHTML = '';
-            addLog(`⏳ Calcul en cours pour ${selectedPmis.length} PMI...`);
-            
             // Petit délai pour permettre au navigateur d'afficher l'indicateur
             await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -518,7 +559,6 @@
                 
             } catch (error) {
                 console.error('Erreur:', error);
-                addLog(`❌ Erreur : ${error.message}`);
                 alert('Erreur lors du calcul. Vérifiez que les adresses sont correctes.');
                 
                 // Restaurer le bouton après erreur
@@ -561,6 +601,10 @@
             let html = `<h4>Itinéraire optimisé</h4>`;
             if (dureeTotale > 0) {
                 html += `<p><strong>Durée totale estimée : ${dureeTotale.toFixed(1)} minutes (${(dureeTotale / 60).toFixed(1)} heures)</strong></p>`;
+                // Ajouter une mention sur les durées estimées
+                html += `<p style="margin-top: 10px; padding: 12px; background-color: #f5f5f5; border-left: 3px solid #666; color: #555; font-size: 0.9em; line-height: 1.5;">
+                    <strong>Note :</strong> Les durées indiquées sont des estimations basées sur des conditions de circulation normales. Elles ne prennent pas en compte les bouchons, les accidents, les conditions météorologiques ou d'autres événements pouvant affecter le trafic. Les temps de trajet réels peuvent varier.
+                </p>`;
             }
             html += `<ol><li><strong>${waypoints[0].address}</strong> (Départ)</li>`;
             // Afficher les points visités (sauf le premier qui est le départ)
@@ -576,34 +620,37 @@
             }
             html += `</ol>`;
             
-            // Ajouter un lien vers Google Maps pour l'itinéraire en voiture
-            if (waypoints.length > 1) {
-                const googleMapsUrl = buildGoogleMapsUrl(waypoints);
-                html += `<p style="margin-top: 20px;">
-                    <a href="${googleMapsUrl}" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #4285f4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                        🗺️ Voir l'itinéraire sur Google Maps
-                    </a>
-                </p>`;
-            }
-            
-            // Ajouter une mention sur les durées estimées
-            html += `<p style="margin-top: 15px; padding: 12px; background-color: #f5f5f5; border-left: 3px solid #666; color: #555; font-size: 0.9em; line-height: 1.5;">
-                <strong>Note :</strong> Les durées indiquées sont des estimations basées sur des conditions de circulation normales. Elles ne prennent pas en compte les bouchons, les accidents, les conditions météorologiques ou d'autres événements pouvant affecter le trafic. Les temps de trajet réels peuvent varier.
-            </p>`;
-            
             routeDiv.innerHTML = html;
             routesDiv.appendChild(routeDiv);
+            
+            // Ajouter le bouton Google Maps à côté du titre
+            const googleMapsButtonDiv = document.getElementById('googleMapsButton');
+            googleMapsButtonDiv.innerHTML = '';
+            if (waypoints.length > 1) {
+                const { url: googleMapsUrl, limited } = buildGoogleMapsUrl(waypoints);
+                const mapsLink = document.createElement('a');
+                mapsLink.href = googleMapsUrl;
+                mapsLink.target = '_blank';
+                mapsLink.style.cssText = 'display: inline-block; padding: 10px 20px; background-color: #4285f4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;';
+                if (limited) {
+                    mapsLink.textContent = '🗺️ Voir l\'itinéraire (9 premières adresses)';
+                } else {
+                    mapsLink.textContent = '🗺️ Voir l\'itinéraire sur Google Maps';
+                }
+                googleMapsButtonDiv.appendChild(mapsLink);
+            }
+            
             document.getElementById('results').style.display = 'block';
-            addLog('✓ Itinéraire affiché');
         }
 
         /**
          * Construit l'URL Google Maps pour l'itinéraire en voiture
+         * Google Maps limite à 10 étapes au total (1 départ + 9 waypoints + 1 destination)
          * @param {Array} waypoints - Liste des points dans l'ordre optimisé
-         * @returns {string} URL Google Maps
+         * @returns {Object} {url: string, limited: boolean} - URL Google Maps et indication si limité
          */
         function buildGoogleMapsUrl(waypoints) {
-            if (waypoints.length === 0) return '';
+            if (waypoints.length === 0) return { url: '', limited: false };
             
             // Point de départ (MaMaMa)
             const origin = encodeURIComponent(waypoints[0].address);
@@ -611,9 +658,13 @@
             // Point de destination (retour à MaMaMa)
             const destination = encodeURIComponent(waypoints[0].address);
             
-            // Waypoints : tous les points à visiter (sauf le départ et le retour)
+            // Waypoints : limiter à 9 maximum (Google Maps limite à 10 étapes au total)
+            // On prend waypoints[1] à waypoints[9] (9 waypoints max)
+            const maxWaypoints = 9;
             const waypointsList = [];
-            for (let i = 1; i < waypoints.length; i++) {
+            const limited = waypoints.length > 10; // Plus de 10 points au total (départ + 9 waypoints + destination)
+            
+            for (let i = 1; i < waypoints.length && waypointsList.length < maxWaypoints; i++) {
                 waypointsList.push(encodeURIComponent(waypoints[i].address));
             }
             const waypointsParam = waypointsList.join('|');
@@ -624,7 +675,7 @@
                 url += `&waypoints=${waypointsParam}`;
             }
             
-            return url;
+            return { url, limited };
         }
 
         /**
