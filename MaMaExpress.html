@@ -99,7 +99,7 @@
             <div class="address-input">
                 <h3>Sélectionner les adresses à livrer</h3>
                 <div class="pmi-controls">
-                    <input type="text" id="searchPmi" placeholder="Rechercher une PMI..." class="search-input">
+                    <input type="text" id="searchPmi" placeholder="Rechercher" class="search-input">
                     <div class="select-buttons">
                         <button id="selectAll" class="select-button">Tout sélectionner</button>
                         <button id="deselectAll" class="select-button">Tout désélectionner</button>
@@ -109,7 +109,7 @@
                     <p style="color: #666;">Chargement des données...</p>
                 </div>
                 <div id="selectedPmiList" class="selected-pmi-list">
-                    <strong id="selectedPmiTitle" class="selected-pmi-title">PMI sélectionnées :</strong>
+                    <strong id="selectedPmiTitle" class="selected-pmi-title">Adresses sélectionnées :</strong>
                     <div id="selectedPmiItems" class="selected-pmi-items"></div>
                 </div>
             </div>
@@ -188,7 +188,7 @@
             
             if (filteredPmis.length === 0) {
                 pmiListDiv.innerHTML = '<p>Aucune PMI trouvée</p>';
-                updateSelectedCount();
+                updateSelectedCount(false);
                 return;
             }
 
@@ -223,11 +223,11 @@
                     } else {
                         selectedPmiIndices.delete(idx);
                     }
-                    updateSelectedCount();
+                    updateSelectedCount(true);
                 }
             };
             
-            updateSelectedCount();
+            updateSelectedCount(false);
         }
 
         function filterPmis(searchTerm) {
@@ -244,7 +244,7 @@
             displayPmis();
         }
 
-        function updateSelectedCount() {
+        function updateSelectedCount(shouldCalculateRoutes = true) {
             const selected = selectedPmiIndices.size;
             const selectedPmiListDiv = document.getElementById('selectedPmiList');
             const selectedPmiTitle = document.getElementById('selectedPmiTitle');
@@ -252,10 +252,12 @@
             
             if (selected === 0) {
                 selectedPmiListDiv.style.display = 'none';
-                document.getElementById('results').style.display = 'none';
+                if (shouldCalculateRoutes) {
+                    document.getElementById('results').style.display = 'none';
+                }
             } else {
                 selectedPmiListDiv.style.display = 'block';
-                selectedPmiTitle.textContent = `${selected} PMI sélectionnée(s) :`;
+                selectedPmiTitle.textContent = `${selected} adresse${selected > 1 ? 's' : ''} sélectionnée${selected > 1 ? 's' : ''}`;
                 selectedPmiItems.innerHTML = '';
                 
                 Array.from(selectedPmiIndices)
@@ -269,7 +271,9 @@
                         }
                     });
                 
-                setTimeout(() => calculateRoutes(), 100);
+                if (shouldCalculateRoutes) {
+                    setTimeout(() => calculateRoutes(), 100);
+                }
             }
         }
 
