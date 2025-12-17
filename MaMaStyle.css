@@ -1,8 +1,9 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
+    background-color: #F7F7F7;
+    color: #2C3E50;
     margin: 0;
-    padding: 0;
-    background-color: #f5f5f5;
+    padding: 20px;
 }
 .header {
     background-color: #fff;
@@ -122,7 +123,8 @@ body {
     cursor: pointer;
 }
 h1, h2, h3 {
-    color: #333;
+    color: #FF6B6B;
+    font-weight: 600;
 }
 .subtitle {
     text-align: center;
@@ -445,7 +447,7 @@ h1 {
     background-color: #45a049;
 }
 
-/* Styles pour MaMaOptiTruc */
+/* Styles pour MaMaExpress */
 .input-section {
     background-color: #fff;
     padding: 20px;
@@ -541,7 +543,7 @@ h1 {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Styles responsifs pour MaMaOptiTruc */
+/* Styles responsifs pour MaMaExpress */
 @media screen and (max-width: 768px) {
     .results-section {
         flex-direction: column;
@@ -667,4 +669,126 @@ h1 {
     max-width: 500px;
     padding: 20px;
     box-sizing: border-box;
+}
+
+/* Styles pour la sélection de PMI */
+.pmi-controls {
+    margin-bottom: 15px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+.select-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.select-button {
+    flex: 1;
+    padding: 8px 16px;
+    background-color: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.select-button:hover {
+    background-color: #e0e0e0;
+}
+
+.pmi-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #fafafa;
+}
+
+.pmi-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px;
+    margin-bottom: 8px;
+    background-color: #fff;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+    transition: background-color 0.2s;
+}
+
+.pmi-item:hover {
+    background-color: #f5f5f5;
+}
+
+.pmi-checkbox {
+    margin-right: 10px;
+    margin-top: 3px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.pmi-item label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+}
+
+.pmi-item label strong {
+    display: block;
+    color: #2C3E50;
+    margin-bottom: 4px;
+    font-size: 15px;
+}
+
+.pmi-address {
+    display: block;
+    color: #666;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.selected-count {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #e8f5e9;
+    border-radius: 5px;
+    text-align: center;
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+.logs-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.log-content {
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.log-entry {
+    margin-bottom: 5px;
+    padding: 3px 0;
+    color: #333;
 }
