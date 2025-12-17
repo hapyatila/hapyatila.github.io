@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MaMaExpress - Association MaMaMa</title>
     <link rel="stylesheet" href="MaMaStyle.css">
+    <!-- Leaflet pour l'affichage de la carte -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <div class="header">
@@ -26,7 +29,7 @@
                 <div id="pmiList" class="pmi-list">
                     <p style="color: #666;">Chargement des données...</p>
                 </div>
-                <div id="selectedPmiList" style="margin-top: 15px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none;">
+                <div id="selectedPmiList" style="margin-top: 15px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; display: none; max-height: 200px; overflow-y: auto;">
                     <strong id="selectedPmiTitle" style="display: block; margin-bottom: 8px; color: #2C3E50;">PMI sélectionnées :</strong>
                     <div id="selectedPmiItems" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; color: #555;"></div>
                 </div>
@@ -40,8 +43,9 @@
                     <h3 style="margin: 0;">Itinéraire optimisé</h3>
                     <div id="googleMapsButton"></div>
                 </div>
-                <div id="routes"></div>
+                <div id="routes" style="max-height: 400px; overflow-y: auto; padding-right: 10px;"></div>
             </div>
+            <div id="mapContainer" style="margin-top: 20px; height: 500px; border-radius: 5px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
         </div>
     </div>
     <div class="footer">
@@ -434,45 +438,52 @@
                 order.push(nextPoint);
             }
                 
-            // Amélioration avec l'algorithme 2-opt
-            let amelioration = true;
-            while (amelioration) {
-                amelioration = false;
-                const n = order.length;
+            // Amélioration avec l'algorithme 2-opt (seulement si moins de 30 points pour garder la rapidité)
+            // Pour plus de points, l'algorithme du plus proche voisin est suffisant
+            if (order.length <= 30) {
+                let amelioration = true;
+                let iterations = 0;
+                const maxIterations = 10; // Limiter le nombre d'itérations pour éviter les calculs trop longs
                 
-                for (let i = 0; i < n - 2; i++) {
-                    for (let j = i + 2; j < n - 1; j++) {
-                        // Calculer le gain potentiel de l'inversion du segment [i+1 ... j]
-                        // gain = d(i,i+1) + d(j,j+1) - d(i,j) - d(i+1,j+1)
-                        const d_i_i1 = dureesMatrix[order[i]][order[i + 1]];
-                        const d_j_j1 = dureesMatrix[order[j]][order[j + 1]];
-                        const d_i_j = dureesMatrix[order[i]][order[j]];
-                        const d_i1_j1 = dureesMatrix[order[i + 1]][order[j + 1]];
-                        
-                        // Ignorer si certaines durées sont infinies
-                        if (d_i_i1 === Infinity || d_j_j1 === Infinity || 
-                            d_i_j === Infinity || d_i1_j1 === Infinity) {
-                            continue;
-                        }
-                        
-                        const gain = d_i_i1 + d_j_j1 - d_i_j - d_i1_j1;
-                        
-                        if (gain > 0) {
-                            // Inverser le segment [i+1 ... j]
-                            let start = i + 1;
-                            let end = j;
-                            while (start < end) {
-                                const temp = order[start];
-                                order[start] = order[end];
-                                order[end] = temp;
-                                start++;
-                                end--;
+                while (amelioration && iterations < maxIterations) {
+                    amelioration = false;
+                    iterations++;
+                    const n = order.length;
+                    
+                    for (let i = 0; i < n - 2; i++) {
+                        for (let j = i + 2; j < n - 1; j++) {
+                            // Calculer le gain potentiel de l'inversion du segment [i+1 ... j]
+                            // gain = d(i,i+1) + d(j,j+1) - d(i,j) - d(i+1,j+1)
+                            const d_i_i1 = dureesMatrix[order[i]][order[i + 1]];
+                            const d_j_j1 = dureesMatrix[order[j]][order[j + 1]];
+                            const d_i_j = dureesMatrix[order[i]][order[j]];
+                            const d_i1_j1 = dureesMatrix[order[i + 1]][order[j + 1]];
+                            
+                            // Ignorer si certaines durées sont infinies
+                            if (d_i_i1 === Infinity || d_j_j1 === Infinity || 
+                                d_i_j === Infinity || d_i1_j1 === Infinity) {
+                                continue;
                             }
-                            amelioration = true;
-                            break; // Sortir de la boucle j
+                            
+                            const gain = d_i_i1 + d_j_j1 - d_i_j - d_i1_j1;
+                            
+                            if (gain > 0) {
+                                // Inverser le segment [i+1 ... j]
+                                let start = i + 1;
+                                let end = j;
+                                while (start < end) {
+                                    const temp = order[start];
+                                    order[start] = order[end];
+                                    order[end] = temp;
+                                    start++;
+                                    end--;
+                                }
+                                amelioration = true;
+                                break; // Sortir de la boucle j
+                            }
                         }
+                        if (amelioration) break; // Sortir de la boucle i
                     }
-                    if (amelioration) break; // Sortir de la boucle i
                 }
             }
             
@@ -526,11 +537,16 @@
             try {
                 // Préparer les locations (point de départ + PMI sélectionnées)
                 // On utilise les durées précalculées, pas besoin de géocoder
+                // Coordonnées de MaMaMa (rue Louis Girard, Aubervilliers)
+                // Ces coordonnées sont extraites du CSV mais ne sont pas dans PMI_ADDRESSES
+                const mamamaLat = 48.90355834151138;
+                const mamamaLng = 2.378094237324154;
+                
                 const locations = [{
                     nom: 'MaMaMa (Départ)',
                     address: MAMAMA_ADDRESS,
-                    lat: null,
-                    lng: null
+                    lat: mamamaLat,
+                    lng: mamamaLng
                 }];
                 
                 for (const pmi of selectedPmis) {
@@ -558,8 +574,11 @@
                 }
                 
             } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur lors du calcul. Vérifiez que les adresses sont correctes.');
+                console.error('Erreur complète:', error);
+                console.error('Message:', error.message);
+                console.error('Stack:', error.stack);
+                console.error('Locations:', locations);
+                alert(`Erreur lors du calcul: ${error.message}\n\nVérifiez la console pour plus de détails.`);
                 
                 // Restaurer le bouton après erreur
                 if (calculateButton) {
@@ -598,7 +617,7 @@
             }
             
             // Construire la liste : départ → visites → retour
-            let html = `<h4>Itinéraire optimisé</h4>`;
+            let html = '';
             if (dureeTotale > 0) {
                 html += `<p><strong>Durée totale estimée : ${dureeTotale.toFixed(1)} minutes (${(dureeTotale / 60).toFixed(1)} heures)</strong></p>`;
                 // Ajouter une mention sur les durées estimées
@@ -640,7 +659,146 @@
                 googleMapsButtonDiv.appendChild(mapsLink);
             }
             
+            // Afficher la carte avec tous les points
+            displayMap(waypoints);
+            
             document.getElementById('results').style.display = 'block';
+        }
+
+        /**
+         * Affiche l'itinéraire sur une carte Leaflet avec tous les points
+         * @param {Array} waypoints - Liste des points dans l'ordre optimisé
+         */
+        // Variable globale pour stocker l'instance de la carte Leaflet
+        let currentMap = null;
+
+        function displayMap(waypoints) {
+            try {
+                const mapContainer = document.getElementById('mapContainer');
+                if (!mapContainer) {
+                    console.warn('mapContainer non trouvé, la carte ne sera pas affichée');
+                    return;
+                }
+                
+                // Détruire la carte précédente si elle existe
+                if (currentMap) {
+                    currentMap.remove();
+                    currentMap = null;
+                }
+                
+                // Nettoyer le conteneur
+                mapContainer.innerHTML = '';
+                
+                if (waypoints.length === 0) return;
+            
+            // Vérifier qu'il y a au moins un point avec des coordonnées
+            let hasCoordinates = false;
+            for (const wp of waypoints) {
+                if (wp.lat && wp.lng) {
+                    hasCoordinates = true;
+                    break;
+                }
+            }
+            
+            if (!hasCoordinates) {
+                mapContainer.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Coordonnées non disponibles pour l\'affichage de la carte</p>';
+                return;
+            }
+            
+            // Créer la carte Leaflet (on ajustera la vue après avoir ajouté les marqueurs)
+            const map = L.map('mapContainer');
+            currentMap = map; // Stocker la référence pour pouvoir la détruire plus tard
+            
+            // Ajouter les tuiles OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Créer un groupe de marqueurs pour pouvoir ajuster la vue
+            const markers = [];
+            const latlngs = [];
+            
+            // Ajouter le point de départ (vert) seulement s'il a des coordonnées
+            if (waypoints[0].lat && waypoints[0].lng) {
+                const startMarker = L.marker([waypoints[0].lat, waypoints[0].lng], {
+                    icon: L.divIcon({
+                        className: 'custom-marker-start',
+                        html: '<div style="background-color: #4CAF50; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                }).addTo(map);
+                startMarker.bindPopup(`<strong>Départ</strong><br>${waypoints[0].address}`);
+                markers.push(startMarker);
+                latlngs.push([waypoints[0].lat, waypoints[0].lng]);
+            }
+            
+            // Ajouter les points intermédiaires (bleus)
+            for (let i = 1; i < waypoints.length; i++) {
+                const waypoint = waypoints[i];
+                if (waypoint.lat && waypoint.lng) {
+                    const marker = L.marker([waypoint.lat, waypoint.lng], {
+                        icon: L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background-color: #2196F3; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div><div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${i}</div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })
+                    }).addTo(map);
+                    
+                    const popupText = waypoint.nom 
+                        ? `<strong>${i}. ${waypoint.nom}</strong><br>${waypoint.address}`
+                        : `<strong>${i}. ${waypoint.address}</strong>`;
+                    marker.bindPopup(popupText);
+                    markers.push(marker);
+                    latlngs.push([waypoint.lat, waypoint.lng]);
+                }
+            }
+            
+            // Dessiner les lignes reliant les points dans l'ordre
+            if (latlngs.length > 1) {
+                const polyline = L.polyline(latlngs, {
+                    color: '#2196F3',
+                    weight: 4,
+                    opacity: 0.7
+                }).addTo(map);
+                
+                // Ajouter la ligne de retour au point de départ seulement si les deux points ont des coordonnées
+                if (latlngs.length > 1 && waypoints[0].lat && waypoints[0].lng && 
+                    waypoints[waypoints.length - 1].lat && waypoints[waypoints.length - 1].lng) {
+                    const returnLine = L.polyline([
+                        [waypoints[waypoints.length - 1].lat, waypoints[waypoints.length - 1].lng],
+                        [waypoints[0].lat, waypoints[0].lng]
+                    ], {
+                        color: '#9E9E9E',
+                        weight: 3,
+                        opacity: 0.5,
+                        dashArray: '10, 5'
+                    }).addTo(map);
+                }
+            }
+            
+            // Ajuster la vue pour afficher tous les marqueurs
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                const bounds = group.getBounds();
+                // Utiliser fitBounds avec un padding pour afficher tous les points
+                // Utiliser setTimeout pour s'assurer que la carte est complètement initialisée
+                setTimeout(() => {
+                    map.fitBounds(bounds.pad(0.1));
+                }, 100);
+            } else {
+                // Si aucun marqueur, centrer sur Paris par défaut
+                map.setView([48.8566, 2.3522], 11);
+            }
+            } catch (error) {
+                console.error('Erreur dans displayMap:', error);
+                const mapContainer = document.getElementById('mapContainer');
+                if (mapContainer) {
+                    mapContainer.innerHTML = `<p style="padding: 20px; text-align: center; color: red;">Erreur d'affichage de la carte: ${error.message}</p>`;
+                }
+            }
         }
 
         /**
