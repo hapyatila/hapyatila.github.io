@@ -268,8 +268,19 @@
                     if (fileResponse.ok) {
                         const fileData = await fileResponse.json();
                         sha = fileData.sha;
+                    } else if (fileResponse.status === 404) {
+                        // Le fichier n'existe pas encore, c'est normal, on va le créer
+                        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                            console.log('📄 Fichier log_MaMaExpress.js n\'existe pas encore, il sera créé');
+                        }
+                    } else {
+                        console.warn('Erreur lors de la récupération du fichier:', fileResponse.status);
                     }
-                } catch (e) {}
+                } catch (e) {
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                        console.warn('Erreur lors de la vérification du fichier:', e);
+                    }
+                }
                 
                 const updateUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
                 const commitMessage = `📊 Mise à jour automatique des logs - ${new Date().toLocaleString('fr-FR')}`;
