@@ -254,7 +254,7 @@
                 jsContent += `;\n`;
                 
                 const encodedContent = btoa(unescape(encodeURIComponent(jsContent)));
-                const fileUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+                const fileUrl = `https://api.github.com/repos/${GITHUB_REPO}/${GITHUB_FILE_PATH}`;
                 let sha = null;
                 
                 try {
@@ -282,7 +282,7 @@
                     }
                 }
                 
-                const updateUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+                const updateUrl = `https://api.github.com/repos/${GITHUB_REPO}/${GITHUB_FILE_PATH}`;
                 const commitMessage = `📊 Mise à jour automatique des logs - ${new Date().toLocaleString('fr-FR')}`;
                 
                 const response = await fetch(updateUrl, {
