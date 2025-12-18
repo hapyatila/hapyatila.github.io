@@ -8,83 +8,92 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        .selected-pmi-list {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 5px;
-            display: none;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .selected-pmi-title {
-            display: block;
-            margin-bottom: 8px;
-            color: #2C3E50;
-        }
-        .selected-pmi-items {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            color: #555;
-        }
-        .selected-pmi-item {
-            padding: 5px;
-            font-size: 14px;
-        }
-        .results-section {
-            display: none;
-        }
-        .results-layout {
+        .top-section {
             display: flex;
             gap: 20px;
-            align-items: stretch;
+            align-items: flex-start;
+            margin-bottom: 20px;
         }
-        .routes-list {
+        .top-section .input-section {
             flex: 1;
             display: flex;
             flex-direction: column;
-            height: 600px;
+            min-height: 600px;
+            padding: 0 !important;
+            margin: 0 !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+        .top-section .results-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .address-input,
+        .routes-list {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 0 !important;
+        }
+        .address-input {
+            height: 100%;
+        }
+        .address-input h3,
+        .routes-header h3 {
+            margin: 0 0 15px 0 !important;
+            padding: 0 !important;
+            line-height: 1.2 !important;
+            font-size: 1.3em;
+        }
+        .pmi-controls {
+            flex-shrink: 0;
+            margin-bottom: 15px;
+        }
+        .pmi-list {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
         .routes-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-shrink: 0;
+            align-items: flex-start;
+            margin: 0 0 15px 0;
+            padding: 0;
         }
         .routes-header h3 {
-            margin: 0;
-        }
-        .routes-content {
             flex: 1;
+        }
+        #googleMapsButton {
+            margin: 0;
+            padding: 0;
+        }
+        .google-maps-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #FFC107;
+            color: #2C3E50;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            vertical-align: top;
+        }
+        #routes {
             overflow-y: auto;
             padding-right: 10px;
         }
-        .map-container {
-            flex: 1;
+        #mapContainer {
+            width: 100%;
             height: 600px;
             border-radius: 5px;
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .duration-note {
-            margin-top: 10px;
-            padding: 12px;
-            background-color: #f5f5f5;
-            border-left: 3px solid #666;
-            color: #555;
-            font-size: 0.9em;
-            line-height: 1.5;
-        }
-        .google-maps-button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #4285f4;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -95,64 +104,238 @@
     <div class="container">
         <h1>MaMaExpress</h1>
         
-        <div class="input-section">
-            <div class="address-input">
-                <h3>Sélectionner les adresses à livrer</h3>
-                <div class="pmi-controls">
-                    <input type="text" id="searchPmi" placeholder="Rechercher" class="search-input">
-                    <div class="select-buttons">
-                        <button id="selectAll" class="select-button">Tout sélectionner</button>
-                        <button id="deselectAll" class="select-button">Tout désélectionner</button>
+        <div id="topSection" class="top-section">
+            <div class="input-section">
+                <div class="address-input">
+                    <h3>Sélectionner les adresses à livrer</h3>
+                    <div class="pmi-controls">
+                        <input type="text" id="searchPmi" placeholder="Rechercher une PMI..." class="search-input">
+                        <div class="select-buttons">
+                            <button id="selectAll" class="select-button">Tout sélectionner</button>
+                            <button id="deselectAll" class="select-button">Tout désélectionner</button>
+                        </div>
+                    </div>
+                    <div id="pmiList" class="pmi-list">
+                        <p style="color: #666;">Chargement des données...</p>
                     </div>
                 </div>
-                <div id="pmiList" class="pmi-list">
-                    <p style="color: #666;">Chargement des données...</p>
-                </div>
-                <div id="selectedPmiList" class="selected-pmi-list">
-                    <strong id="selectedPmiTitle" class="selected-pmi-title">Adresses sélectionnées :</strong>
-                    <div id="selectedPmiItems" class="selected-pmi-items"></div>
-                </div>
             </div>
-        </div>
 
-        <div id="results" class="results-section">
-            <div class="results-layout">
-                <div class="routes-list">
+            <div id="results" class="results-section">
+                <div id="routesListContainer" class="routes-list">
                     <div class="routes-header">
                         <h3>Itinéraire optimisé</h3>
                         <div id="googleMapsButton"></div>
                     </div>
-                    <div id="routes" class="routes-content"></div>
+                    <div id="routes"></div>
                 </div>
-                <div id="mapContainer" class="map-container"></div>
             </div>
         </div>
+
+        <div id="mapContainer"></div>
     </div>
     <div class="footer">
         Pour toute idée d'amélioration, contactez Natacha : <a href="mailto:digital@asso-mamama.fr">digital@asso-mamama.fr</a>
     </div>
 
-    <!-- Fichiers de données JavaScript (générés depuis les CSV) -->
     <script src="pmi_addresses.js"></script>
     <script src="pmi_durees.js"></script>
+    <script src="log_MaMaExpress.js"></script>
 
     <script>
+        const GITHUB_REPO = 'apyatlia/hapyatila.github.io';
+        const GITHUB_BRANCH = 'main';
+        const GITHUB_FILE_PATH = 'log_MaMaExpress.js';
+        const ENABLE_LOGGING = true;
+        const AUTO_SAVE_TO_GITHUB = true;
+        const AUTO_SAVE_DELAY = 5000;
+        
+        let userIP = null;
+        let ipFetchPromise = null;
         let allPmis = [];
         let filteredPmis = [];
         let dureesMap = new Map();
         let selectedPmiIndices = new Set();
         let currentMap = null;
+        let isMapInitializing = false;
+        let autoSaveTimeout = null;
 
+        async function getUserIP() {
+            if (userIP) return userIP;
+            if (ipFetchPromise) return ipFetchPromise;
+            
+            ipFetchPromise = fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    userIP = data.ip;
+                    return userIP;
+                })
+                .catch(() => 'unknown');
+            
+            return ipFetchPromise;
+        }
+        
+        function storeLogLocally(logEntry) {
+            try {
+                const STORAGE_KEY = 'mamama_express_logs';
+                const MAX_LOGS = 1000;
+                
+                let logs = [];
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    try {
+                        logs = JSON.parse(stored);
+                    } catch (e) {
+                        logs = [];
+                    }
+                }
+                
+                logs.push(logEntry);
+                if (logs.length > MAX_LOGS) {
+                    logs = logs.slice(-MAX_LOGS);
+                }
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+            } catch (error) {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    console.warn('Impossible de stocker le log localement:', error);
+                }
+            }
+        }
+        
+        function getAllLogs() {
+            let allLogs = [];
+            
+            if (typeof MAMAMA_USAGE_LOGS !== 'undefined' && Array.isArray(MAMAMA_USAGE_LOGS)) {
+                allLogs = [...MAMAMA_USAGE_LOGS];
+            }
+            
+            const STORAGE_KEY = 'mamama_express_logs';
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    const localLogs = JSON.parse(stored);
+                    const existingTimestamps = new Set(allLogs.map(log => log.timestamp));
+                    const newLocalLogs = localLogs.filter(log => !existingTimestamps.has(log.timestamp));
+                    allLogs = [...allLogs, ...newLocalLogs];
+                } catch (e) {}
+            }
+            
+            allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            return allLogs;
+        }
+        
+        async function autoSaveToGitHub() {
+            if (!AUTO_SAVE_TO_GITHUB || !GITHUB_REPO) return;
+            
+            const TOKEN_KEY = 'github_token';
+            const token = localStorage.getItem(TOKEN_KEY);
+            if (!token) return;
+            
+            try {
+                const allLogs = getAllLogs();
+                if (allLogs.length === 0) return;
+                
+                let jsContent = `// Fichier généré automatiquement - Ne pas modifier manuellement\n`;
+                jsContent += `// Source: Logs d'utilisation MaMaExpress\n`;
+                jsContent += `// Dernière mise à jour: ${new Date().toISOString()}\n\n`;
+                jsContent += `const MAMAMA_USAGE_LOGS = `;
+                jsContent += JSON.stringify(allLogs, null, 2);
+                jsContent += `;\n`;
+                
+                const encodedContent = btoa(unescape(encodeURIComponent(jsContent)));
+                const fileUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+                let sha = null;
+                
+                try {
+                    const fileResponse = await fetch(fileUrl, {
+                        headers: {
+                            'Authorization': `token ${token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (fileResponse.ok) {
+                        const fileData = await fileResponse.json();
+                        sha = fileData.sha;
+                    }
+                } catch (e) {}
+                
+                const updateUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+                const commitMessage = `📊 Mise à jour automatique des logs - ${new Date().toLocaleString('fr-FR')}`;
+                
+                const response = await fetch(updateUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: commitMessage,
+                        content: encodedContent,
+                        branch: GITHUB_BRANCH,
+                        ...(sha && { sha: sha })
+                    })
+                });
+                
+                if (response.ok) {
+                    localStorage.removeItem('mamama_express_logs');
+                } else if (response.status === 401) {
+                    localStorage.removeItem(TOKEN_KEY);
+                }
+            } catch (error) {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    console.warn('Erreur lors de la sauvegarde automatique:', error);
+                }
+            }
+        }
+        
+        async function logEvent(eventType, data = {}) {
+            if (!ENABLE_LOGGING) return;
+            
+            try {
+                const ip = await getUserIP();
+                const logEntry = {
+                    timestamp: new Date().toISOString(),
+                    eventType: eventType,
+                    ip: ip,
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    screenResolution: `${window.screen.width}x${window.screen.height}`,
+                    viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+                    referrer: document.referrer || 'direct',
+                    url: window.location.href,
+                    ...data
+                };
+                
+                storeLogLocally(logEntry);
+                
+                if (AUTO_SAVE_TO_GITHUB && GITHUB_REPO) {
+                    if (autoSaveTimeout) {
+                        clearTimeout(autoSaveTimeout);
+                    }
+                    autoSaveTimeout = setTimeout(() => {
+                        autoSaveToGitHub();
+                    }, AUTO_SAVE_DELAY);
+                }
+            } catch (error) {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    console.warn('Erreur dans logEvent:', error);
+                }
+            }
+        }
+        
         function initializeFromJS() {
             if (typeof PMI_ADDRESSES === 'undefined') {
-                console.error('PMI_ADDRESSES non défini');
+                console.error('PMI_ADDRESSES non défini. Vérifiez que pmi_addresses.js est chargé.');
                 document.getElementById('pmiList').innerHTML = 
                     '<p style="color: red;">❌ Erreur : Fichier pmi_addresses.js non chargé</p>';
                 return;
             }
             
             if (typeof PMI_DUREES === 'undefined') {
-                console.error('PMI_DUREES non défini');
+                console.error('PMI_DUREES non défini. Vérifiez que pmi_durees.js est chargé.');
                 return;
             }
             
@@ -175,20 +358,30 @@
             for (const [key, value] of Object.entries(PMI_DUREES)) {
                 dureesMap.set(key, value);
             }
+            
+            logEvent('page_load', {
+                totalPmis: allPmis.length,
+                totalDurees: dureesMap.size
+            });
+            
+            setTimeout(() => {
+                calculateRoutes();
+            }, 200);
         }
 
         function displayPmis() {
             const pmiListDiv = document.getElementById('pmiList');
             
             document.querySelectorAll('.pmi-checkbox:checked').forEach(cb => {
-                selectedPmiIndices.add(parseInt(cb.dataset.index));
+                const idx = parseInt(cb.dataset.index);
+                selectedPmiIndices.add(idx);
             });
             
             pmiListDiv.innerHTML = '';
             
             if (filteredPmis.length === 0) {
                 pmiListDiv.innerHTML = '<p>Aucune PMI trouvée</p>';
-                updateSelectedCount(false);
+                updateSelectedCount();
                 return;
             }
 
@@ -208,94 +401,111 @@
                 
                 const label = document.createElement('label');
                 label.htmlFor = `pmi-${index}`;
-                label.innerHTML = `<strong>${pmi.nom}</strong><br><span class="pmi-address">${pmi.address}</span>`;
+                label.innerHTML = `
+                    <strong>${pmi.nom}</strong><br>
+                    <span class="pmi-address">${pmi.address}</span>
+                `;
                 
                 checkboxDiv.appendChild(checkboxInput);
                 checkboxDiv.appendChild(label);
                 pmiListDiv.appendChild(checkboxDiv);
             });
             
-            pmiListDiv.onchange = (e) => {
-                if (e.target.classList.contains('pmi-checkbox')) {
-                    const idx = parseInt(e.target.dataset.index);
-                    if (e.target.checked) {
-                        selectedPmiIndices.add(idx);
-                    } else {
-                        selectedPmiIndices.delete(idx);
-                    }
-                    updateSelectedCount(true);
+            pmiListDiv.addEventListener('change', function(e) {
+                if (e.target && e.target.classList.contains('pmi-checkbox')) {
+                    handlePmiToggle(e.target);
                 }
-            };
+            });
             
-            updateSelectedCount(false);
+            pmiListDiv.addEventListener('click', function(e) {
+                if (e.target.tagName === 'LABEL' || e.target.closest('label')) {
+                    const label = e.target.tagName === 'LABEL' ? e.target : e.target.closest('label');
+                    const checkboxId = label.getAttribute('for');
+                    if (checkboxId) {
+                        const checkbox = document.getElementById(checkboxId);
+                        if (checkbox && checkbox.classList.contains('pmi-checkbox')) {
+                            setTimeout(() => {
+                                handlePmiToggle(checkbox);
+                            }, 10);
+                        }
+                    }
+                }
+            });
+            
+            updateSelectedCount();
+        }
+
+        function handlePmiToggle(checkbox) {
+            const idx = parseInt(checkbox.dataset.index);
+            const pmi = allPmis[idx];
+            if (checkbox.checked) {
+                selectedPmiIndices.add(idx);
+                logEvent('pmi_selected', {
+                    pmiIndex: idx,
+                    pmiName: pmi ? pmi.nom : 'unknown',
+                    pmiAddress: pmi ? pmi.address : 'unknown',
+                    totalSelected: selectedPmiIndices.size
+                });
+            } else {
+                selectedPmiIndices.delete(idx);
+                logEvent('pmi_deselected', {
+                    pmiIndex: idx,
+                    pmiName: pmi ? pmi.nom : 'unknown',
+                    totalSelected: selectedPmiIndices.size
+                });
+            }
+            updateSelectedCount();
         }
 
         function filterPmis(searchTerm) {
             if (allPmis.length === 0) return;
             
             const term = (searchTerm || '').toLowerCase().trim();
-            filteredPmis = term === '' 
-                ? [...allPmis]
-                : allPmis.filter(pmi => 
-                    (pmi.nom && pmi.nom.toLowerCase().includes(term)) ||
-                    (pmi.address && pmi.address.toLowerCase().includes(term))
-                );
+            if (term === '') {
+                filteredPmis = [...allPmis];
+            } else {
+                filteredPmis = allPmis.filter(pmi => {
+                    const nomMatch = pmi.nom && pmi.nom.toLowerCase().includes(term);
+                    const addressMatch = pmi.address && pmi.address.toLowerCase().includes(term);
+                    return nomMatch || addressMatch;
+                });
+            }
+            
+            if (term !== '') {
+                logEvent('pmi_search', {
+                    searchTerm: term,
+                    resultsCount: filteredPmis.length,
+                    totalPmis: allPmis.length
+                });
+            }
             
             displayPmis();
         }
 
-        function updateSelectedCount(shouldCalculateRoutes = true) {
-            const selected = selectedPmiIndices.size;
-            const selectedPmiListDiv = document.getElementById('selectedPmiList');
-            const selectedPmiTitle = document.getElementById('selectedPmiTitle');
-            const selectedPmiItems = document.getElementById('selectedPmiItems');
-            
-            if (selected === 0) {
-                selectedPmiListDiv.style.display = 'none';
-                if (shouldCalculateRoutes) {
-                    document.getElementById('results').style.display = 'none';
-                }
-            } else {
-                selectedPmiListDiv.style.display = 'block';
-                selectedPmiTitle.textContent = `${selected} adresse${selected > 1 ? 's' : ''} sélectionnée${selected > 1 ? 's' : ''}`;
-                selectedPmiItems.innerHTML = '';
-                
-                Array.from(selectedPmiIndices)
-                    .sort((a, b) => a - b)
-                    .forEach(index => {
-                        if (allPmis[index]) {
-                            const div = document.createElement('div');
-                            div.className = 'selected-pmi-item';
-                            div.textContent = allPmis[index].nom || allPmis[index].address;
-                            selectedPmiItems.appendChild(div);
-                        }
-                    });
-                
-                if (shouldCalculateRoutes) {
-                    setTimeout(() => calculateRoutes(), 100);
-                }
-            }
+        function updateSelectedCount() {
+            setTimeout(() => {
+                calculateRoutes();
+            }, 100);
         }
 
-        /**
-         * Récupère l'ID d'une adresse depuis le mapping
-         */
         function getAddressId(address) {
-            if (!address) return null;
-            
-            if (typeof PMI_ADDRESS_TO_ID !== 'undefined' && PMI_ADDRESS_TO_ID[address] !== undefined) {
-                return PMI_ADDRESS_TO_ID[address];
+            if (!address || typeof PMI_ADDRESS_TO_ID === 'undefined') {
+                return null;
             }
-            
+            let id = PMI_ADDRESS_TO_ID[address];
+            if (id !== undefined) {
+                return id;
+            }
             if (typeof PMI_ADDRESSES !== 'undefined') {
-                const pmi = PMI_ADDRESSES.find(p => p.address === address);
-                if (pmi) return pmi.id;
+                for (const pmi of PMI_ADDRESSES) {
+                    if (pmi.address === address) {
+                        return pmi.id;
+                    }
+                }
             }
-            
             if (typeof MAMAMA_ADDRESS !== 'undefined' && address === MAMAMA_ADDRESS) {
                 return typeof MAMAMA_ID !== 'undefined' ? MAMAMA_ID : null;
             }
-            
             return null;
         }
 
@@ -303,10 +513,14 @@
             const id1 = getAddressId(adresse1);
             const id2 = getAddressId(adresse2);
             
-            if (id1 === null || id2 === null) return Infinity;
+            if (id1 === null || id2 === null) {
+                return Infinity;
+            }
             
             const key = `${id1}|${id2}`;
-            return dureesMap.get(key) ?? Infinity;
+            const duree = dureesMap.get(key);
+            
+            return duree !== undefined ? duree : Infinity;
         }
 
         async function calculateOptimalOrder(waypoints) {
@@ -320,7 +534,12 @@
             for (let i = 0; i < n; i++) {
                 dureesMatrix[i] = [];
                 for (let j = 0; j < n; j++) {
-                    dureesMatrix[i][j] = (i === j) ? 0 : getDuree(waypoints[i].address, waypoints[j].address);
+                    if (i === j) {
+                        dureesMatrix[i][j] = 0;
+                    } else {
+                        const duree = getDuree(waypoints[i].address, waypoints[j].address);
+                        dureesMatrix[i][j] = duree;
+                    }
                 }
             }
 
@@ -384,7 +603,9 @@
                                 let start = i + 1;
                                 let end = j;
                                 while (start < end) {
-                                    [order[start], order[end]] = [order[end], order[start]];
+                                    const temp = order[start];
+                                    order[start] = order[end];
+                                    order[end] = temp;
                                     start++;
                                     end--;
                                 }
@@ -401,10 +622,10 @@
         }
 
         async function calculateRoutes() {
-            document.getElementById('results').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
 
-            const selectedPmis = Array.from(selectedPmiIndices).map(index => allPmis[index]);
-            if (selectedPmis.length === 0) return;
+            const selectedIndices = Array.from(selectedPmiIndices);
+            const selectedPmis = selectedIndices.map(index => allPmis[index]);
 
             await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -417,26 +638,59 @@
                     address: MAMAMA_ADDRESS,
                     lat: mamamaLat,
                     lng: mamamaLng
-                }, ...selectedPmis.map(pmi => ({
-                    nom: pmi.nom,
-                    address: pmi.address,
-                    lat: pmi.lat,
-                    lng: pmi.lng
-                }))];
+                }];
+                
+                for (const pmi of selectedPmis) {
+                    locations.push({
+                        nom: pmi.nom,
+                        address: pmi.address,
+                        lat: pmi.lat,
+                        lng: pmi.lng
+                    });
+                }
+
+                if (selectedPmis.length === 0) {
+                    displayRoute(locations);
+                    return;
+                }
 
                 const optimalOrder = await calculateOptimalOrder(locations);
                 const orderedWaypoints = optimalOrder.map(index => locations[index]);
+                
+                logEvent('route_calculated', {
+                    numberOfPmis: selectedPmis.length,
+                    selectedPmiNames: selectedPmis.map(pmi => pmi.nom),
+                    routeLength: orderedWaypoints.length
+                });
+                
                 displayRoute(orderedWaypoints);
                 
             } catch (error) {
-                console.error('Erreur:', error);
-                alert(`Erreur lors du calcul: ${error.message}`);
+                console.error('Erreur complète:', error);
+                alert(`Erreur lors du calcul: ${error.message}\n\nVérifiez la console pour plus de détails.`);
             }
         }
 
         function displayRoute(waypoints) {
             const routesDiv = document.getElementById('routes');
             routesDiv.innerHTML = '';
+            
+            const topSection = document.getElementById('topSection');
+            const routesListContainer = document.getElementById('routesListContainer');
+            
+            if (waypoints.length === 1) {
+                topSection.style.alignItems = 'flex-start';
+                if (routesListContainer) {
+                    routesListContainer.style.height = 'auto';
+                    routesListContainer.style.minHeight = 'auto';
+                }
+            } else {
+                topSection.style.alignItems = 'stretch';
+                if (routesListContainer) {
+                    routesListContainer.style.height = '100%';
+                    routesListContainer.style.minHeight = '600px';
+                }
+            }
 
             const routeDiv = document.createElement('div');
             routeDiv.className = 'route';
@@ -444,37 +698,42 @@
             let dureeTotale = 0;
             for (let i = 0; i < waypoints.length - 1; i++) {
                 const duree = getDuree(waypoints[i].address, waypoints[i + 1].address);
-                if (duree !== Infinity) dureeTotale += duree;
+                if (duree !== Infinity) {
+                    dureeTotale += duree;
+                }
             }
-            
-            const dureeRetour = getDuree(waypoints[waypoints.length - 1].address, waypoints[0].address);
-            if (dureeRetour !== Infinity) dureeTotale += dureeRetour;
+            const dernierPoint = waypoints[waypoints.length - 1];
+            const dureeRetour = getDuree(dernierPoint.address, waypoints[0].address);
+            if (dureeRetour !== Infinity) {
+                dureeTotale += dureeRetour;
+            }
             
             let html = '';
             if (dureeTotale > 0) {
                 const minutesArrondies = Math.round(dureeTotale);
                 const heures = Math.floor(dureeTotale / 60);
                 const minutesRestantes = Math.round(dureeTotale % 60);
-                const formatHeures = minutesRestantes > 0 
-                    ? `${heures}h${minutesRestantes.toString().padStart(2, '0')}` 
-                    : `${heures}h`;
+                const formatHeures = minutesRestantes > 0 ? `${heures}h${minutesRestantes.toString().padStart(2, '0')}` : `${heures}h`;
                 html += `<p><strong>Durée totale estimée : ${minutesArrondies} minutes (${formatHeures})</strong></p>`;
-                html += `<p class="duration-note">
+                html += `<p style="margin-top: 10px; padding: 12px; background-color: #f5f5f5; border-left: 3px solid #666; color: #555; font-size: 0.9em; line-height: 1.5;">
                     <strong>Note :</strong> Les durées indiquées sont des estimations basées sur des conditions de circulation normales. Elles ne prennent pas en compte les bouchons, les accidents, les conditions météorologiques ou d'autres événements pouvant affecter le trafic. Les temps de trajet réels peuvent varier.
                 </p>`;
             }
-            
-            html += `<ol start="0"><li><strong>${waypoints[0].address}</strong> (Départ)</li>`;
-            for (let i = 1; i < waypoints.length; i++) {
-                const displayName = waypoints[i].nom 
-                    ? `${waypoints[i].nom} - ${waypoints[i].address}` 
-                    : waypoints[i].address;
-                html += `<li>${displayName}</li>`;
+            if (waypoints.length === 1) {
+                html += `<p style="color: #666; font-style: italic;">Sélectionnez des PMI pour voir l'itinéraire optimisé.</p>`;
+            } else {
+                html += `<ol start="0"><li><strong>${waypoints[0].address}</strong> (Départ)</li>`;
+                for (let i = 1; i < waypoints.length; i++) {
+                    const displayName = waypoints[i].nom 
+                        ? `${waypoints[i].nom} - ${waypoints[i].address}` 
+                        : waypoints[i].address;
+                    html += `<li>${displayName}</li>`;
+                }
+                if (waypoints.length > 1) {
+                    html += `<li><strong>${waypoints[0].address}</strong> (Retour)</li>`;
+                }
+                html += `</ol>`;
             }
-            if (waypoints.length > 1) {
-                html += `<li><strong>${waypoints[0].address}</strong> (Retour)</li>`;
-            }
-            html += `</ol>`;
             
             routeDiv.innerHTML = html;
             routesDiv.appendChild(routeDiv);
@@ -486,10 +745,18 @@
                 const mapsLink = document.createElement('a');
                 mapsLink.href = googleMapsUrl;
                 mapsLink.target = '_blank';
-                mapsLink.className = 'google-maps-button';
-                mapsLink.textContent = limited 
-                    ? '🗺️ Voir l\'itinéraire (9 premières adresses)'
-                    : '🗺️ Voir l\'itinéraire sur Google Maps';
+                mapsLink.className = 'google-maps-btn';
+                if (limited) {
+                    mapsLink.textContent = 'Voir l\'itinéraire (9 premières adresses)';
+                } else {
+                    mapsLink.textContent = 'Voir l\'itinéraire sur Google Maps';
+                }
+                mapsLink.addEventListener('click', function() {
+                    logEvent('google_maps_opened', {
+                        numberOfWaypoints: waypoints.length,
+                        limited: limited
+                    });
+                });
                 googleMapsButtonDiv.appendChild(mapsLink);
             }
             
@@ -498,103 +765,187 @@
         }
 
         function displayMap(waypoints) {
+            if (isMapInitializing) return;
+            isMapInitializing = true;
             try {
                 const mapContainer = document.getElementById('mapContainer');
-                if (!mapContainer) return;
+                if (!mapContainer) {
+                    console.warn('mapContainer non trouvé, la carte ne sera pas affichée');
+                    isMapInitializing = false;
+                    return;
+                }
                 
                 if (currentMap) {
-                    currentMap.remove();
+                    try {
+                        currentMap.remove();
+                    } catch (e) {}
                     currentMap = null;
                 }
                 
+                if (mapContainer._leaflet_id) {
+                    delete mapContainer._leaflet_id;
+                }
                 mapContainer.innerHTML = '';
-                if (waypoints.length === 0) return;
-            
-                const hasCoordinates = waypoints.some(wp => wp.lat && wp.lng);
-                if (!hasCoordinates) {
-                    mapContainer.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Coordonnées non disponibles</p>';
+                
+                if (waypoints.length === 0) {
+                    mapContainer.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Sélectionnez des PMI pour voir la carte</p>';
+                    isMapInitializing = false;
                     return;
                 }
             
-                const map = L.map('mapContainer');
-                currentMap = map;
+            let hasCoordinates = false;
+            for (const wp of waypoints) {
+                if (wp.lat && wp.lng) {
+                    hasCoordinates = true;
+                    break;
+                }
+            }
             
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors',
+            if (!hasCoordinates) {
+                mapContainer.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Coordonnées non disponibles pour l\'affichage de la carte</p>';
+                isMapInitializing = false;
+                return;
+            }
+            
+            setTimeout(() => {
+                const container = document.getElementById('mapContainer');
+                if (!container || container.offsetParent === null) {
+                    console.warn('mapContainer non visible, report de l\'initialisation de la carte');
+                    return;
+                }
+                
+                if (container._leaflet_id) {
+                    delete container._leaflet_id;
+                    container.innerHTML = '';
+                }
+                
+                let initialCenter = [48.8566, 2.3522];
+                let initialZoom = 11;
+                if (waypoints.length > 0 && waypoints[0].lat && waypoints[0].lng) {
+                    initialCenter = [waypoints[0].lat, waypoints[0].lng];
+                    initialZoom = 13;
+                }
+                
+                const map = L.map('mapContainer', {
+                    center: initialCenter,
+                    zoom: initialZoom
+                });
+                currentMap = map;
+                
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+                    attribution: '© CARTO © OpenStreetMap contributors',
+                    subdomains: 'abcd',
                     maxZoom: 19
                 }).addTo(map);
-            
-                const markers = [];
-                const latlngs = [];
-            
-                if (waypoints[0].lat && waypoints[0].lng) {
-                    const startMarker = L.marker([waypoints[0].lat, waypoints[0].lng], {
-                        icon: L.divIcon({
-                            className: 'custom-marker-start',
-                            html: '<div style="background-color: #FFC107; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-                            iconSize: [20, 20],
-                            iconAnchor: [10, 10]
-                        })
-                    }).addTo(map);
-                    startMarker.bindPopup(`<strong>MaMaMa (Départ/Arrivée)</strong><br>${waypoints[0].address}`);
-                    markers.push(startMarker);
-                    latlngs.push([waypoints[0].lat, waypoints[0].lng]);
-                }
-            
-                for (let i = 1; i < waypoints.length; i++) {
-                    const waypoint = waypoints[i];
-                    if (waypoint.lat && waypoint.lng) {
-                        const marker = L.marker([waypoint.lat, waypoint.lng], {
+                
+                map.whenReady(() => {
+                    const markers = [];
+                    const latlngs = [];
+                    
+                    if (waypoints[0].lat && waypoints[0].lng) {
+                        const startMarker = L.marker([waypoints[0].lat, waypoints[0].lng], {
                             icon: L.divIcon({
-                                className: 'custom-marker',
-                                html: `<div style="background-color: #2196F3; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div><div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${i}</div>`,
-                                iconSize: [30, 30],
-                                iconAnchor: [15, 15]
+                                className: 'custom-marker-start',
+                                html: '<div style="background-color: #FFC107; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
                             })
                         }).addTo(map);
-                        
-                        const popupText = waypoint.nom 
-                            ? `<strong>${i}. ${waypoint.nom}</strong><br>${waypoint.address}`
-                            : `<strong>${i}. ${waypoint.address}</strong>`;
-                        marker.bindPopup(popupText);
-                        markers.push(marker);
-                        latlngs.push([waypoint.lat, waypoint.lng]);
+                        startMarker.bindPopup(`<strong>MaMaMa (Départ/Arrivée)</strong><br>${waypoints[0].address}`);
+                        markers.push(startMarker);
+                        latlngs.push([waypoints[0].lat, waypoints[0].lng]);
                     }
-                }
-            
-                if (latlngs.length > 1) {
-                    L.polyline(latlngs, {
-                        color: '#2196F3',
-                        weight: 4,
-                        opacity: 0.7
-                    }).addTo(map);
-                
-                    if (waypoints[0].lat && waypoints[0].lng && 
-                        waypoints[waypoints.length - 1].lat && waypoints[waypoints.length - 1].lng) {
-                        L.polyline([
-                            [waypoints[waypoints.length - 1].lat, waypoints[waypoints.length - 1].lng],
-                            [waypoints[0].lat, waypoints[0].lng]
-                        ], {
-                            color: '#9E9E9E',
-                            weight: 3,
-                            opacity: 0.5,
-                            dashArray: '10, 5'
+                    
+                    for (let i = 1; i < waypoints.length; i++) {
+                        const waypoint = waypoints[i];
+                        if (waypoint.lat && waypoint.lng) {
+                            const marker = L.marker([waypoint.lat, waypoint.lng], {
+                                icon: L.divIcon({
+                                    className: 'custom-marker',
+                                    html: `<div style="background-color: #FF6B6B; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div><div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${i}</div>`,
+                                    iconSize: [30, 30],
+                                    iconAnchor: [15, 15]
+                                })
+                            }).addTo(map);
+                            
+                            const popupText = waypoint.nom 
+                                ? `<strong>${i}. ${waypoint.nom}</strong><br>${waypoint.address}`
+                                : `<strong>${i}. ${waypoint.address}</strong>`;
+                            marker.bindPopup(popupText);
+                            markers.push(marker);
+                            latlngs.push([waypoint.lat, waypoint.lng]);
+                        }
+                    }
+                    
+                    if (latlngs.length > 1) {
+                        const polyline = L.polyline(latlngs, {
+                            color: '#FF6B6B',
+                            weight: 4,
+                            opacity: 0.7
                         }).addTo(map);
+                        
+                        if (latlngs.length > 1 && waypoints[0].lat && waypoints[0].lng && 
+                            waypoints[waypoints.length - 1].lat && waypoints[waypoints.length - 1].lng) {
+                            const returnLine = L.polyline([
+                                [waypoints[waypoints.length - 1].lat, waypoints[waypoints.length - 1].lng],
+                                [waypoints[0].lat, waypoints[0].lng]
+                            ], {
+                                color: '#9E9E9E',
+                                weight: 3,
+                                opacity: 0.5,
+                                dashArray: '10, 5'
+                            }).addTo(map);
+                        }
                     }
-                }
-            
-                if (markers.length > 0) {
-                    const group = new L.featureGroup(markers);
-                    setTimeout(() => map.fitBounds(group.getBounds().pad(0.1)), 100);
-                } else {
-                    map.setView([48.8566, 2.3522], 11);
-                }
+                    
+                    if (markers.length > 0) {
+                        const group = new L.featureGroup(markers);
+                        try {
+                            const bounds = group.getBounds();
+                            setTimeout(() => {
+                                if (!currentMap) {
+                                    isMapInitializing = false;
+                                    return;
+                                }
+                                
+                                const container = currentMap.getContainer();
+                                if (!container || !container.parentNode) {
+                                    isMapInitializing = false;
+                                    return;
+                                }
+                                
+                                try {
+                                    if (bounds && bounds.isValid && bounds.isValid()) {
+                                        currentMap.fitBounds(bounds.pad(0.1));
+                                    } else {
+                                        if (markers.length > 0 && markers[0].getLatLng) {
+                                            currentMap.setView(markers[0].getLatLng(), 13);
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn('Erreur lors de l\'ajustement de la vue:', e);
+                                }
+                                isMapInitializing = false;
+                            }, 150);
+                        } catch (e) {
+                            console.warn('Erreur lors de la récupération des bounds:', e);
+                            isMapInitializing = false;
+                        }
+                    } else {
+                        isMapInitializing = false;
+                    }
+                });
+            }, 50);
             } catch (error) {
                 console.error('Erreur dans displayMap:', error);
                 const mapContainer = document.getElementById('mapContainer');
                 if (mapContainer) {
-                    mapContainer.innerHTML = `<p style="padding: 20px; text-align: center; color: red;">Erreur: ${error.message}</p>`;
+                    mapContainer.innerHTML = `<p style="padding: 20px; text-align: center; color: red;">Erreur d'affichage de la carte: ${error.message}</p>`;
                 }
+            } finally {
+                setTimeout(() => {
+                    isMapInitializing = false;
+                }, 100);
             }
         }
 
@@ -610,29 +961,44 @@
             for (let i = 1; i < waypoints.length && waypointsList.length < maxWaypoints; i++) {
                 waypointsList.push(encodeURIComponent(waypoints[i].address));
             }
+            const waypointsParam = waypointsList.join('|');
             
             let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
-            if (waypointsList.length > 0) {
-                url += `&waypoints=${waypointsList.join('|')}`;
+            if (waypointsParam) {
+                url += `&waypoints=${waypointsParam}`;
             }
             
             return { url, limited };
         }
 
         function selectAllVisible() {
+            const countBefore = selectedPmiIndices.size;
             document.querySelectorAll('.pmi-checkbox').forEach(cb => {
                 const idx = parseInt(cb.dataset.index);
                 cb.checked = true;
                 selectedPmiIndices.add(idx);
             });
+            const countAfter = selectedPmiIndices.size;
+            logEvent('select_all', {
+                countBefore: countBefore,
+                countAfter: countAfter,
+                filteredCount: filteredPmis.length
+            });
             updateSelectedCount();
         }
 
         function deselectAllVisible() {
+            const countBefore = selectedPmiIndices.size;
             document.querySelectorAll('.pmi-checkbox').forEach(cb => {
                 const idx = parseInt(cb.dataset.index);
                 cb.checked = false;
                 selectedPmiIndices.delete(idx);
+            });
+            const countAfter = selectedPmiIndices.size;
+            logEvent('deselect_all', {
+                countBefore: countBefore,
+                countAfter: countAfter,
+                filteredCount: filteredPmis.length
             });
             updateSelectedCount();
         }
@@ -643,23 +1009,30 @@
             const deselectAll = document.getElementById('deselectAll');
             
             if (searchPmi) {
-                searchPmi.addEventListener('input', (e) => filterPmis(e.target.value));
+                searchPmi.addEventListener('input', function(e) {
+                    filterPmis(e.target.value);
+                });
             }
             
-            if (selectAll) selectAll.addEventListener('click', selectAllVisible);
-            if (deselectAll) deselectAll.addEventListener('click', deselectAllVisible);
+            if (selectAll) {
+                selectAll.addEventListener('click', selectAllVisible);
+            }
+            
+            if (deselectAll) {
+                deselectAll.addEventListener('click', deselectAllVisible);
+            }
             
             if (typeof PMI_ADDRESSES !== 'undefined' && typeof PMI_DUREES !== 'undefined') {
                 initializeFromJS();
             } else {
-                window.addEventListener('load', () => {
+                window.addEventListener('load', function() {
                     setTimeout(() => {
                         if (typeof PMI_ADDRESSES !== 'undefined' && typeof PMI_DUREES !== 'undefined') {
                             initializeFromJS();
                         } else {
-                            console.error('Données non disponibles');
+                            console.error('Données non disponibles après chargement');
                             document.getElementById('pmiList').innerHTML = 
-                                '<p style="color: red;">❌ Erreur : Fichiers de données non chargés</p>';
+                                '<p style="color: red;">❌ Erreur : Les fichiers de données JavaScript ne sont pas chargés. Vérifiez que pmi_addresses.js et pmi_durees.js sont présents.</p>';
                         }
                     }, 100);
                 });
@@ -669,4 +1042,5 @@
         attachEventListeners();
     </script>
 </body>
-</html> 
+</html>
+

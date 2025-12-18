@@ -737,6 +737,7 @@ h1 {
     cursor: pointer;
     width: 18px;
     height: 18px;
+    accent-color: #FFC107; /* Jaune MaMaMa */
 }
 
 .pmi-item label {
