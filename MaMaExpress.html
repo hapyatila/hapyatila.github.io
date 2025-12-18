@@ -140,224 +140,14 @@
 
     <script src="pmi_addresses.js"></script>
     <script src="pmi_durees.js"></script>
-    <script src="log_MaMaExpress.js"></script>
 
     <script>
-        const GITHUB_REPO = 'apyatlia/hapyatila.github.io';
-        const GITHUB_BRANCH = 'main';
-        const GITHUB_FILE_PATH = 'log_MaMaExpress.js';
-        const ENABLE_LOGGING = true;
-        const AUTO_SAVE_TO_GITHUB = true;
-        const AUTO_SAVE_DELAY = 5000;
-        
-        let userIP = null;
-        let ipFetchPromise = null;
         let allPmis = [];
         let filteredPmis = [];
         let dureesMap = new Map();
         let selectedPmiIndices = new Set();
         let currentMap = null;
         let isMapInitializing = false;
-        let autoSaveTimeout = null;
-
-        async function getUserIP() {
-            if (userIP) return userIP;
-            if (ipFetchPromise) return ipFetchPromise;
-            
-            ipFetchPromise = fetch('https://api.ipify.org?format=json')
-                .then(response => response.json())
-                .then(data => {
-                    userIP = data.ip;
-                    return userIP;
-                })
-                .catch(() => 'unknown');
-            
-            return ipFetchPromise;
-        }
-        
-        function storeLogLocally(logEntry) {
-            try {
-                const STORAGE_KEY = 'mamama_express_logs';
-                const MAX_LOGS = 1000;
-                
-                let logs = [];
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    try {
-                        logs = JSON.parse(stored);
-                    } catch (e) {
-                        logs = [];
-                    }
-                }
-                
-                logs.push(logEntry);
-                if (logs.length > MAX_LOGS) {
-                    logs = logs.slice(-MAX_LOGS);
-                }
-                
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-            } catch (error) {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    console.warn('Impossible de stocker le log localement:', error);
-                }
-            }
-        }
-        
-        function getAllLogs() {
-            let allLogs = [];
-            
-            if (typeof MAMAMA_USAGE_LOGS !== 'undefined' && Array.isArray(MAMAMA_USAGE_LOGS)) {
-                allLogs = [...MAMAMA_USAGE_LOGS];
-            }
-            
-            const STORAGE_KEY = 'mamama_express_logs';
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                try {
-                    const localLogs = JSON.parse(stored);
-                    const existingTimestamps = new Set(allLogs.map(log => log.timestamp));
-                    const newLocalLogs = localLogs.filter(log => !existingTimestamps.has(log.timestamp));
-                    allLogs = [...allLogs, ...newLocalLogs];
-                } catch (e) {}
-            }
-            
-            allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            return allLogs;
-        }
-        
-        async function autoSaveToGitHub() {
-            if (!AUTO_SAVE_TO_GITHUB || !GITHUB_REPO) {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    console.log('Auto-save désactivé ou repo non configuré');
-                }
-                return;
-            }
-            
-            const TOKEN_KEY = 'github_token';
-            const token = localStorage.getItem(TOKEN_KEY);
-            if (!token) {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    console.log('Token GitHub manquant. Les logs sont stockés localement mais ne seront pas sauvegardés sur GitHub.');
-                }
-                return;
-            }
-            
-            try {
-                const allLogs = getAllLogs();
-                if (allLogs.length === 0) return;
-                
-                let jsContent = `// Fichier généré automatiquement - Ne pas modifier manuellement\n`;
-                jsContent += `// Source: Logs d'utilisation MaMaExpress\n`;
-                jsContent += `// Dernière mise à jour: ${new Date().toISOString()}\n\n`;
-                jsContent += `const MAMAMA_USAGE_LOGS = `;
-                jsContent += JSON.stringify(allLogs, null, 2);
-                jsContent += `;\n`;
-                
-                const encodedContent = btoa(unescape(encodeURIComponent(jsContent)));
-                const fileUrl = `https://api.github.com/repos/${GITHUB_REPO}/${GITHUB_FILE_PATH}`;
-                let sha = null;
-                
-                try {
-                    const fileResponse = await fetch(fileUrl, {
-                        headers: {
-                            'Authorization': `token ${token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                    
-                    if (fileResponse.ok) {
-                        const fileData = await fileResponse.json();
-                        sha = fileData.sha;
-                    } else if (fileResponse.status === 404) {
-                        // Le fichier n'existe pas encore, c'est normal, on va le créer
-                        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                            console.log('📄 Fichier log_MaMaExpress.js n\'existe pas encore, il sera créé');
-                        }
-                    } else {
-                        console.warn('Erreur lors de la récupération du fichier:', fileResponse.status);
-                    }
-                } catch (e) {
-                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                        console.warn('Erreur lors de la vérification du fichier:', e);
-                    }
-                }
-                
-                const updateUrl = `https://api.github.com/repos/${GITHUB_REPO}/${GITHUB_FILE_PATH}`;
-                const commitMessage = `📊 Mise à jour automatique des logs - ${new Date().toLocaleString('fr-FR')}`;
-                
-                const response = await fetch(updateUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: commitMessage,
-                        content: encodedContent,
-                        branch: GITHUB_BRANCH,
-                        ...(sha && { sha: sha })
-                    })
-                });
-                
-                if (response.ok) {
-                    const savedCount = getAllLogs().length;
-                    localStorage.removeItem('mamama_express_logs');
-                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                        console.log(`✅ ${savedCount} log(s) sauvegardé(s) sur GitHub`);
-                    }
-                } else {
-                    const errorData = await response.json().catch(() => ({}));
-                    if (response.status === 401) {
-                        localStorage.removeItem(TOKEN_KEY);
-                        console.error('❌ Token GitHub invalide. Supprimé du localStorage.');
-                    } else {
-                        console.error('❌ Erreur lors de la sauvegarde:', response.status, errorData.message || 'Erreur inconnue');
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Erreur lors de la sauvegarde automatique:', error);
-            }
-        }
-        
-        async function logEvent(eventType, data = {}) {
-            if (!ENABLE_LOGGING) return;
-            
-            try {
-                const ip = await getUserIP();
-                const logEntry = {
-                    timestamp: new Date().toISOString(),
-                    eventType: eventType,
-                    ip: ip,
-                    userAgent: navigator.userAgent,
-                    language: navigator.language,
-                    screenResolution: `${window.screen.width}x${window.screen.height}`,
-                    viewportSize: `${window.innerWidth}x${window.innerHeight}`,
-                    referrer: document.referrer || 'direct',
-                    url: window.location.href,
-                    ...data
-                };
-                
-                storeLogLocally(logEntry);
-                
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    console.log(`📝 Log enregistré: ${eventType}`, data);
-                }
-                
-                if (AUTO_SAVE_TO_GITHUB && GITHUB_REPO) {
-                    if (autoSaveTimeout) {
-                        clearTimeout(autoSaveTimeout);
-                    }
-                    autoSaveTimeout = setTimeout(() => {
-                        autoSaveToGitHub();
-                    }, AUTO_SAVE_DELAY);
-                }
-            } catch (error) {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    console.warn('Erreur dans logEvent:', error);
-                }
-            }
-        }
         
         function initializeFromJS() {
             if (typeof PMI_ADDRESSES === 'undefined') {
@@ -391,11 +181,6 @@
             for (const [key, value] of Object.entries(PMI_DUREES)) {
                 dureesMap.set(key, value);
             }
-            
-            logEvent('page_load', {
-                totalPmis: allPmis.length,
-                totalDurees: dureesMap.size
-            });
             
             setTimeout(() => {
                 calculateRoutes();
@@ -473,19 +258,8 @@
             const pmi = allPmis[idx];
             if (checkbox.checked) {
                 selectedPmiIndices.add(idx);
-                logEvent('pmi_selected', {
-                    pmiIndex: idx,
-                    pmiName: pmi ? pmi.nom : 'unknown',
-                    pmiAddress: pmi ? pmi.address : 'unknown',
-                    totalSelected: selectedPmiIndices.size
-                });
             } else {
                 selectedPmiIndices.delete(idx);
-                logEvent('pmi_deselected', {
-                    pmiIndex: idx,
-                    pmiName: pmi ? pmi.nom : 'unknown',
-                    totalSelected: selectedPmiIndices.size
-                });
             }
             updateSelectedCount();
         }
@@ -504,13 +278,6 @@
                 });
             }
             
-            if (term !== '') {
-                logEvent('pmi_search', {
-                    searchTerm: term,
-                    resultsCount: filteredPmis.length,
-                    totalPmis: allPmis.length
-                });
-            }
             
             displayPmis();
         }
@@ -690,12 +457,6 @@
                 const optimalOrder = await calculateOptimalOrder(locations);
                 const orderedWaypoints = optimalOrder.map(index => locations[index]);
                 
-                logEvent('route_calculated', {
-                    numberOfPmis: selectedPmis.length,
-                    selectedPmiNames: selectedPmis.map(pmi => pmi.nom),
-                    routeLength: orderedWaypoints.length
-                });
-                
                 displayRoute(orderedWaypoints);
                 
             } catch (error) {
@@ -785,10 +546,7 @@
                     mapsLink.textContent = 'Voir l\'itinéraire sur Google Maps';
                 }
                 mapsLink.addEventListener('click', function() {
-                    logEvent('google_maps_opened', {
-                        numberOfWaypoints: waypoints.length,
-                        limited: limited
-                    });
+                    // Ouverture de Google Maps
                 });
                 googleMapsButtonDiv.appendChild(mapsLink);
             }
@@ -1005,33 +763,19 @@
         }
 
         function selectAllVisible() {
-            const countBefore = selectedPmiIndices.size;
             document.querySelectorAll('.pmi-checkbox').forEach(cb => {
                 const idx = parseInt(cb.dataset.index);
                 cb.checked = true;
                 selectedPmiIndices.add(idx);
             });
-            const countAfter = selectedPmiIndices.size;
-            logEvent('select_all', {
-                countBefore: countBefore,
-                countAfter: countAfter,
-                filteredCount: filteredPmis.length
-            });
             updateSelectedCount();
         }
 
         function deselectAllVisible() {
-            const countBefore = selectedPmiIndices.size;
             document.querySelectorAll('.pmi-checkbox').forEach(cb => {
                 const idx = parseInt(cb.dataset.index);
                 cb.checked = false;
                 selectedPmiIndices.delete(idx);
-            });
-            const countAfter = selectedPmiIndices.size;
-            logEvent('deselect_all', {
-                countBefore: countBefore,
-                countAfter: countAfter,
-                filteredCount: filteredPmis.length
             });
             updateSelectedCount();
         }
@@ -1073,38 +817,6 @@
         }
         
         attachEventListeners();
-        
-        // Fonction de débogage pour vérifier l'état du logging
-        window.checkLoggingStatus = function() {
-            const TOKEN_KEY = 'github_token';
-            const STORAGE_KEY = 'mamama_express_logs';
-            const token = localStorage.getItem(TOKEN_KEY);
-            const stored = localStorage.getItem(STORAGE_KEY);
-            const logs = stored ? JSON.parse(stored) : [];
-            
-            console.log('=== État du système de logging ===');
-            console.log('ENABLE_LOGGING:', ENABLE_LOGGING);
-            console.log('AUTO_SAVE_TO_GITHUB:', AUTO_SAVE_TO_GITHUB);
-            console.log('GITHUB_REPO:', GITHUB_REPO);
-            console.log('Token GitHub:', token ? '✅ Présent' : '❌ Manquant');
-            console.log('Logs en localStorage:', logs.length);
-            console.log('Logs depuis fichier JS:', typeof MAMAMA_USAGE_LOGS !== 'undefined' ? MAMAMA_USAGE_LOGS.length : 0);
-            console.log('Total logs:', getAllLogs().length);
-            console.log('===============================');
-            
-            if (!token && AUTO_SAVE_TO_GITHUB) {
-                console.warn('⚠️ Pour activer la sauvegarde automatique sur GitHub, vous devez configurer un token.');
-                console.warn('Créez un Personal Access Token sur https://github.com/settings/tokens avec la permission "repo"');
-                console.warn('Puis exécutez: localStorage.setItem("github_token", "votre_token_ici")');
-            }
-        };
-        
-        // Afficher l'état au chargement si on est en localhost
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            setTimeout(() => {
-                window.checkLoggingStatus();
-            }, 1000);
-        }
     </script>
 </body>
 </html>
