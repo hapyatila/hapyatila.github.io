@@ -1,13 +1,18 @@
 /**
- * Type de parcours contrat : remplacement ou collaboration.
+ * Type de parcours contrat : remplacement, collaboration ou fin de bail.
  * Stocké en sessionStorage pour router vers le bon questionnaire.
  */
 (function () {
   var STORAGE_KEY = "ac-parcours-type";
   var DEFAULT = "remplacement";
+  var KNOWN = {
+    remplacement: true,
+    collaboration: true,
+    "fin-de-bail": true,
+  };
 
   function normalize(type) {
-    return type === "collaboration" ? "collaboration" : "remplacement";
+    return KNOWN[type] ? type : DEFAULT;
   }
 
   function set(type) {
@@ -31,16 +36,29 @@
     return get() === "collaboration";
   }
 
+  function isFinDeBail() {
+    return get() === "fin-de-bail";
+  }
+
   function questionnaireUrl() {
-    return isCollaboration() ? "questionnaire-collaboration.html" : "questionnaire.html";
+    var t = get();
+    if (t === "collaboration") return "questionnaire-collaboration.html";
+    if (t === "fin-de-bail") return "questionnaire-fin-de-bail.html";
+    return "questionnaire.html";
   }
 
   function label() {
-    return isCollaboration() ? "Contrat de collaboration" : "Contrat de remplacement";
+    var t = get();
+    if (t === "collaboration") return "Contrat de collaboration";
+    if (t === "fin-de-bail") return "Fin de bail professionnel";
+    return "Contrat de remplacement";
   }
 
   function labelShort() {
-    return isCollaboration() ? "Collaboration" : "Remplacement";
+    var t = get();
+    if (t === "collaboration") return "Collaboration";
+    if (t === "fin-de-bail") return "Fin de bail";
+    return "Remplacement";
   }
 
   function applyQuestionnaireLinks() {
@@ -58,7 +76,7 @@
   function initFromQuery() {
     var params = new URLSearchParams(window.location.search);
     var type = params.get("type");
-    if (type === "remplacement" || type === "collaboration") {
+    if (KNOWN[type]) {
       set(type);
     }
   }
@@ -68,6 +86,7 @@
     set: set,
     get: get,
     isCollaboration: isCollaboration,
+    isFinDeBail: isFinDeBail,
     questionnaireUrl: questionnaireUrl,
     label: label,
     labelShort: labelShort,

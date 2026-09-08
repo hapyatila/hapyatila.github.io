@@ -1,5 +1,5 @@
 /**
- * parcours/apercu.html — clauses d’aperçu selon remplacement ou collaboration.
+ * parcours/apercu.html — clauses d’aperçu selon le parcours.
  */
 (function () {
   var LOCKED_BLOCK =
@@ -49,10 +49,10 @@
 
     window.ParcoursType.applyApercuBackLinks();
 
-    var isCollab = window.ParcoursType.isCollaboration();
+    var parcours = window.ParcoursType.get();
     var clauses =
       window.MedLexClauseThemes && window.MedLexClauseThemes.forApercu
-        ? window.MedLexClauseThemes.forApercu(isCollab ? 'collaboration' : 'remplacement')
+        ? window.MedLexClauseThemes.forApercu(parcours)
         : [];
 
     var list = document.getElementById('apercu-clauses');
@@ -62,13 +62,19 @@
 
     var title = document.querySelector('.ac-title--page');
     if (title) {
-      title.textContent = isCollab
-        ? 'Ce qui sera dans ton contrat de collaboration'
-        : 'Ce qui sera dans ton contrat';
+      if (parcours === 'collaboration') {
+        title.textContent = 'Ce qui sera dans ton contrat de collaboration';
+      } else if (parcours === 'fin-de-bail') {
+        title.textContent = 'Ce qui sera dans ton courrier de fin de bail';
+      } else {
+        title.textContent = 'Ce qui sera dans ton contrat';
+      }
     }
 
-    if (isCollab) {
+    if (parcours === 'collaboration') {
       document.title = 'Aperçu du contrat de collaboration · Au Clair';
+    } else if (parcours === 'fin-de-bail') {
+      document.title = 'Aperçu fin de bail · Au Clair';
     }
   }
 

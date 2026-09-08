@@ -98,6 +98,39 @@
     },
   ];
 
+  var FIN_DE_BAIL = [
+    {
+      id: 'cadre-bail',
+      title: 'Cadre du congé',
+      desc: 'Bail professionnel uniquement, résiliation amiable — sans litige ni faute imputable.',
+    },
+    {
+      id: 'modele',
+      title: 'Qui prend l’initiative',
+      desc: 'Modèle A si le locataire quitte les locaux, modèle B si le propriétaire refuse le renouvellement à l’échéance.',
+    },
+    {
+      id: 'parties',
+      title: 'Bailleur et Preneur',
+      desc: 'Identités, adresses et éventuel représentant du propriétaire — pour que le courrier soit complet.',
+    },
+    {
+      id: 'locaux',
+      title: 'Locaux et dates',
+      desc: 'Adresse des locaux, date de signature et d’échéance du bail — références exactes du congé.',
+    },
+    {
+      id: 'preavis',
+      title: 'Préavis de six mois',
+      desc: 'Délai légal rappelé dans le courrier, avec envoi en lettre recommandée avec avis de réception.',
+    },
+    {
+      id: 'sortie',
+      title: 'État des lieux et clés',
+      desc: 'Proposition de convenir d’une date pour l’état des lieux, la restitution des clés et du dépôt de garantie.',
+    },
+  ];
+
   /** @type {Record<string, {desc?: string, editStep?: number}>} */
   var COLLAB_ARTICLE_META = {
     preamble: {
@@ -245,6 +278,19 @@
     '14': { desc: 'Annexes complémentaires éventuelles au contrat.', editStep: 12 },
   };
 
+  var FIN_BAIL_ARTICLE_META = {
+    preamble: {
+      desc: 'Courrier de congé du bail professionnel — identité des parties, locaux et préavis de six mois.',
+      editSteps: [
+        { step: 2, label: 'Modifier la situation' },
+        { step: 3, label: 'Modifier le bailleur' },
+        { step: 4, label: 'Modifier le preneur' },
+        { step: 5, label: 'Modifier les locaux' },
+        { step: 6, label: 'Modifier les dates' },
+      ],
+    },
+  };
+
   function articleKeyFromSection(section) {
     if (section.isPreamble) return 'preamble';
     var m = String(section.heading || '').match(/Article\s+(\d+(?:\.\d+)?)(?:er|re)?\b/i);
@@ -265,11 +311,19 @@
 
   function getArticleMeta(parcours, section) {
     var key = articleKeyFromSection(section);
-    var store = parcours === 'collaboration' ? COLLAB_ARTICLE_META : REMPL_ARTICLE_META;
+    var store =
+      parcours === 'collaboration'
+        ? COLLAB_ARTICLE_META
+        : parcours === 'fin-de-bail'
+          ? FIN_BAIL_ARTICLE_META
+          : REMPL_ARTICLE_META;
     var extra = store[key] || {};
-    var title = section.isPreamble
-      ? 'Préambule et parties'
-      : titleFromHeading(section.heading);
+    var title =
+      parcours === 'fin-de-bail' && section.isPreamble
+        ? 'Courrier de fin de bail'
+        : section.isPreamble
+          ? 'Préambule et parties'
+          : titleFromHeading(section.heading);
 
     var editSteps = extra.editSteps
       ? extra.editSteps.slice()
@@ -289,8 +343,9 @@
   }
 
   function questionnaireHref(parcours, editStep) {
-    var base =
-      parcours === 'collaboration' ? 'questionnaire-collaboration.html' : 'questionnaire.html';
+    var base = 'questionnaire.html';
+    if (parcours === 'collaboration') base = 'questionnaire-collaboration.html';
+    if (parcours === 'fin-de-bail') base = 'questionnaire-fin-de-bail.html';
     if (editStep == null) return null;
     return base + '?step=' + editStep + '&from=contrat';
   }
@@ -298,11 +353,17 @@
   window.MedLexClauseThemes = {
     collaboration: COLLABORATION,
     remplacement: REMPLACEMENT,
+    'fin-de-bail': FIN_DE_BAIL,
     forApercu: function (parcours) {
-      var list = parcours === 'collaboration' ? COLLABORATION : REMPLACEMENT;
+      var list =
+        parcours === 'collaboration'
+          ? COLLABORATION
+          : parcours === 'fin-de-bail'
+            ? FIN_DE_BAIL
+            : REMPLACEMENT;
       return list
         .filter(function (t) {
-          return t.id !== 'cadre';
+          return parcours === 'fin-de-bail' ? true : t.id !== 'cadre';
         })
         .map(function (t) {
           return { themeId: t.id, title: t.title, desc: t.desc };

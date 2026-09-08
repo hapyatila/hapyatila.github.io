@@ -149,6 +149,20 @@ export const REMPL_ARTICLE_META = {
   '14': { desc: 'Annexes complémentaires éventuelles au contrat.', editStep: 12 },
 };
 
+/** @type {Record<string, { desc?: string, editStep?: number, editSteps?: { step: number, label: string }[] }>} */
+export const FIN_BAIL_ARTICLE_META = {
+  preamble: {
+    desc: 'Courrier de congé du bail professionnel — identité des parties, locaux et préavis de six mois.',
+    editSteps: [
+      { step: 2, label: 'Modifier la situation' },
+      { step: 3, label: 'Modifier le bailleur' },
+      { step: 4, label: 'Modifier le preneur' },
+      { step: 5, label: 'Modifier les locaux' },
+      { step: 6, label: 'Modifier les dates' },
+    ],
+  },
+};
+
 function isArticleLine(line) {
   return /^(Article|ARTICLE)\s+/i.test(String(line || '').trim());
 }
@@ -179,9 +193,19 @@ function shortLabelFromKey(key, isPreamble) {
 
 export function getArticleMeta(parcours, section) {
   const key = articleKeyFromSection(section);
-  const store = parcours === 'collaboration' ? COLLAB_ARTICLE_META : REMPL_ARTICLE_META;
+  const store =
+    parcours === 'collaboration'
+      ? COLLAB_ARTICLE_META
+      : parcours === 'fin-de-bail'
+        ? FIN_BAIL_ARTICLE_META
+        : REMPL_ARTICLE_META;
   const extra = store[key] || {};
-  const title = section.isPreamble ? 'Préambule et parties' : titleFromHeading(section.heading);
+  const title =
+    parcours === 'fin-de-bail' && section.isPreamble
+      ? 'Courrier de fin de bail'
+      : section.isPreamble
+        ? 'Préambule et parties'
+        : titleFromHeading(section.heading);
 
   const editSteps = extra.editSteps
     ? extra.editSteps.slice()

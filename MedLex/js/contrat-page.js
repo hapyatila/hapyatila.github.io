@@ -35,11 +35,14 @@ function showError(message, questionnaireHref) {
   var guided = document.getElementById('contract-guided');
   var toggle = document.querySelector('.ac-view-toggle');
   if (!doc) return;
-  var href = questionnaireHref || 'questionnaire.html';
-  var isCollab = window.ParcoursType && window.ParcoursType.isCollaboration();
-  var title = isCollab
-    ? 'Contrat de collaboration infirmier libéral'
-    : 'Contrat de remplacement infirmier libéral';
+  var href = questionnaireHref || (window.ParcoursType && window.ParcoursType.questionnaireUrl()) || 'questionnaire.html';
+  var parcours = window.ParcoursType && window.ParcoursType.get();
+  var title =
+    parcours === 'collaboration'
+      ? 'Contrat de collaboration infirmier libéral'
+      : parcours === 'fin-de-bail'
+        ? 'Fin de bail professionnel'
+        : 'Contrat de remplacement infirmier libéral';
   if (guided) guided.innerHTML = '';
   if (toggle) toggle.classList.add('ac-hidden');
   doc.classList.remove('ac-hidden');
@@ -92,6 +95,31 @@ function renderCollaborationContract(docEl, bodyText, answers, Contract) {
   return { bodyText: bodyText, bodyHtml: bodyHtml };
 }
 
+function renderFinDeBailContract(docEl, bodyText, answers, Contract) {
+  var subtitle =
+    answers.isModeleB
+      ? 'Congé pour non-renouvellement (propriétaire)'
+      : 'Notification de congé (locataire)';
+  var parties =
+    escapeHtml(answers.identitePreneur || '') +
+    ' · ' +
+    escapeHtml(answers.identiteBailleur || '');
+
+  var bodyHtml = Contract.buildContractRenderedHtml(bodyText, answers);
+  docEl.innerHTML =
+    '<p class="ac-contract-doc__title">Fin de bail professionnel</p>' +
+    '<p class="ac-contract-doc__subtitle">' +
+    escapeHtml(subtitle) +
+    ' — ' +
+    parties +
+    '</p>' +
+    '<div class="ac-contract-doc__body">' +
+    bodyHtml +
+    '</div>';
+
+  return { bodyText: bodyText, bodyHtml: bodyHtml };
+}
+
 function mountGuidedContractView(parcours, bodyText, bodyHtml) {
   if (!window.MedLexContractGuided) return;
   window.MedLexContractGuided.mount({
@@ -102,13 +130,25 @@ function mountGuidedContractView(parcours, bodyText, bodyHtml) {
   window.MedLexContractGuided.initViewToggle();
 }
 
-function updatePageChrome(isCollab) {
+function updatePageChrome(parcours) {
   var docEl = document.getElementById('contract-doc');
   if (docEl) {
-    docEl.setAttribute(
-      'aria-label',
-      isCollab ? 'Aperçu du contrat de collaboration' : 'Aperçu du contrat de remplacement'
-    );
+    var label =
+      parcours === 'collaboration'
+        ? 'Aperçu du contrat de collaboration'
+        : parcours === 'fin-de-bail'
+          ? 'Aperçu du courrier de fin de bail'
+          : 'Aperçu du contrat de remplacement';
+    docEl.setAttribute('aria-label', label);
+  }
+  var pageTitle = document.querySelector('.ac-title--page');
+  if (pageTitle && parcours === 'fin-de-bail') {
+    pageTitle.textContent = 'Ton courrier';
+  }
+  var micro = document.querySelector('.ac-main > .ac-microcopy');
+  if (micro && parcours === 'fin-de-bail') {
+    micro.textContent =
+      'Paiement confirmé — parcours le courrier, ou consulte le texte intégral avant la signature.';
   }
 }
 
@@ -313,16 +353,65 @@ async function initRemplacementContrat(docEl, pdfBtn) {
   }
 }
 
+async function initFinDeBailContrat(docEl, pdfBtn) {
+  var qHref = 'questionnaire-fin-de-bail.html';
+
+  var snap = window.ParcoursFinDeBailSnapshot && window.ParcoursFinDeBailSnapshot.load();
+  if (!snap) {
+    showError(
+      'Aucune réponse au questionnaire n’a été trouvée. Complète le questionnaire pour générer ton courrier.',
+      qHref
+    );
+    if (pdfBtn) pdfBtn.disabled = true;
+    return;
+  }
+
+  if (!window.ParcoursFinDeBailSnapshot.apply(snap)) {
+    showError('Impossible de restaurer les réponses du questionnaire.', qHref);
+    if (pdfBtn) pdfBtn.disabled = true;
+    return;
+  }
+
+  try {
+    await loadScript('../medlex-fin-de-bail-templates-embedded.js');
+    await import('./contract/fin-de-bail/medlex-fin-de-bail-contract.js');
+    var Contract = window.MedLexFinDeBailContract;
+
+    var answers = Contract.collectAnswers();
+    var templateRaw = await Contract.loadTemplate(answers);
+    var bodyText = Contract.buildContractText(templateRaw, answers);
+    var rendered = renderFinDeBailContract(docEl, bodyText, answers, Contract);
+    docEl.removeAttribute('aria-busy');
+    mountGuidedContractView('fin-de-bail', rendered.bodyText, rendered.bodyHtml);
+
+    wirePdfDownload(pdfBtn, docEl, Contract.PDF_FILENAME || 'conge-bail-professionnel-medlex.pdf', {
+      bodyText: rendered.bodyText,
+      parcours: 'fin-de-bail',
+    });
+  } catch (e) {
+    console.error(e);
+    showError(
+      e instanceof Error
+        ? 'Erreur lors de la génération : ' + e.message
+        : 'Erreur lors de la génération du courrier.',
+      qHref
+    );
+    if (pdfBtn) pdfBtn.disabled = true;
+  }
+}
+
 async function initContratPage() {
   var docEl = document.getElementById('contract-doc');
   var pdfBtn = document.getElementById('download-pdf');
   if (!docEl) return;
 
-  var isCollab = window.ParcoursType && window.ParcoursType.isCollaboration();
-  updatePageChrome(isCollab);
+  var parcours = (window.ParcoursType && window.ParcoursType.get()) || 'remplacement';
+  updatePageChrome(parcours);
 
-  if (isCollab) {
+  if (parcours === 'collaboration') {
     await initCollaborationContrat(docEl, pdfBtn);
+  } else if (parcours === 'fin-de-bail') {
+    await initFinDeBailContrat(docEl, pdfBtn);
   } else {
     await initRemplacementContrat(docEl, pdfBtn);
   }

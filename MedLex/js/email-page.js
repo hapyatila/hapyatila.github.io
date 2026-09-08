@@ -9,7 +9,7 @@
     window.ParcoursType.initFromQuery();
   }
 
-  if (preset === 'remplacement' || preset === 'collaboration') {
+  if (preset === 'remplacement' || preset === 'collaboration' || preset === 'fin-de-bail') {
     var back = document.querySelector('.ac-back');
     if (back) {
       back.setAttribute('href', '../index.html');

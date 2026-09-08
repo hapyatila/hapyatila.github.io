@@ -3,9 +3,15 @@
     window.ParcoursType.initFromQuery();
   }
 
+  var KNOWN = {
+    remplacement: true,
+    collaboration: true,
+    "fin-de-bail": true,
+  };
+
   var params = new URLSearchParams(window.location.search);
   var preset = params.get("type");
-  if (preset === "remplacement" || preset === "collaboration") {
+  if (KNOWN[preset]) {
     if (window.ParcoursType) {
       window.ParcoursType.set(preset);
     }
