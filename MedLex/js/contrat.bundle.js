@@ -67,9 +67,9 @@
   }
   function getArticleMeta(parcours, section) {
     const key = articleKeyFromSection(section);
-    const store = parcours === "collaboration" ? COLLAB_ARTICLE_META : parcours === "fin-de-bail" ? FIN_BAIL_ARTICLE_META : REMPL_ARTICLE_META;
+    const store = parcours === "collaboration" ? COLLAB_ARTICLE_META : parcours === "fin-de-bail" ? FIN_BAIL_ARTICLE_META : parcours === "mise-en-demeure" ? MISE_EN_DEMEURE_ARTICLE_META : REMPL_ARTICLE_META;
     const extra = store[key] || {};
-    const title = parcours === "fin-de-bail" && section.isPreamble ? "Courrier de fin de bail" : section.isPreamble ? "Pr\xE9ambule et parties" : titleFromHeading(section.heading);
+    const title = (parcours === "fin-de-bail" || parcours === "mise-en-demeure") && section.isPreamble ? parcours === "mise-en-demeure" ? "Mise en demeure du bailleur" : "Courrier de fin de bail" : section.isPreamble ? "Pr\xE9ambule et parties" : titleFromHeading(section.heading);
     const editSteps = extra.editSteps ? extra.editSteps.slice() : extra.editStep != null ? [{ step: extra.editStep, label: "Modifier" }] : [];
     return {
       key,
@@ -116,7 +116,7 @@
       };
     });
   }
-  var COLLAB_ARTICLE_META, REMPL_ARTICLE_META, FIN_BAIL_ARTICLE_META;
+  var COLLAB_ARTICLE_META, REMPL_ARTICLE_META, FIN_BAIL_ARTICLE_META, MISE_EN_DEMEURE_ARTICLE_META;
   var init_article_guide = __esm({
     "js/contract/article-guide.js"() {
       COLLAB_ARTICLE_META = {
@@ -271,6 +271,17 @@
             { step: 4, label: "Modifier le preneur" },
             { step: 5, label: "Modifier les locaux" },
             { step: 6, label: "Modifier les dates" }
+          ]
+        }
+      };
+      MISE_EN_DEMEURE_ARTICLE_META = {
+        preamble: {
+          desc: "Mise en demeure pr\xE9alable pour faute du bailleur \u2014 faits, mesures demand\xE9es et d\xE9lai.",
+          editSteps: [
+            { step: 1, label: "Modifier les manquements" },
+            { step: 4, label: "Modifier les faits" },
+            { step: 6, label: "Modifier les mesures" },
+            { step: 7, label: "Modifier les parties" }
           ]
         }
       };
@@ -2645,6 +2656,246 @@
     }
   });
 
+  // js/contract/mise-en-demeure/snapshot.js
+  function collectQuestionnaireSnapshot4() {
+    if (window.ParcoursMiseEnDemeureSnapshot) {
+      return window.ParcoursMiseEnDemeureSnapshot.collect();
+    }
+    return null;
+  }
+  function applyQuestionnaireSnapshot4(snap) {
+    if (window.ParcoursMiseEnDemeureSnapshot) {
+      return window.ParcoursMiseEnDemeureSnapshot.apply(snap);
+    }
+    return false;
+  }
+  var init_snapshot4 = __esm({
+    "js/contract/mise-en-demeure/snapshot.js"() {
+    }
+  });
+
+  // js/contract/mise-en-demeure/answers.js
+  function hiddenVal3(id, fallback) {
+    const el = $(id);
+    if (!el) return fallback || "";
+    return el.value != null && String(el.value).trim() !== "" ? String(el.value).trim() : fallback || "";
+  }
+  function formatDateFr2(id) {
+    const raw = val(id);
+    if (!raw) return "Non renseign\xE9";
+    try {
+      return formatDate(raw) || raw;
+    } catch (e) {
+      return raw;
+    }
+  }
+  function checkedLabels(name, labels) {
+    const out = [];
+    document.querySelectorAll('input[name="' + name + '"]:checked').forEach(function(el) {
+      const lbl = labels[el.value];
+      if (lbl) out.push(lbl);
+    });
+    return out;
+  }
+  function collectAnswers4() {
+    const representant = val("representant-bailleur");
+    const precision = val("precision-local");
+    const autreObligation = val("obligation-autre");
+    const autreConsequence = val("consequence-autre");
+    const travauxDesc = val("mesure-travaux");
+    const reparationDesc = val("mesure-reparation");
+    const accesDesc = val("mesure-acces");
+    const autreMesure = val("mesure-autre");
+    const obligations = checkedLabels("obligations", OBLIGATION_LABELS);
+    if (autreObligation) obligations.push(autreObligation);
+    const consequences = checkedLabels("consequences", CONSEQUENCE_LABELS);
+    if (autreConsequence) consequences.push(autreConsequence);
+    const mesures = [];
+    if (travauxDesc) mesures.push("Travaux : " + travauxDesc);
+    if (reparationDesc) mesures.push("R\xE9paration : " + reparationDesc);
+    if (accesDesc) mesures.push("R\xE9tablissement d'acc\xE8s : " + accesDesc);
+    if (autreMesure) mesures.push("Autre : " + autreMesure);
+    const persistance = hiddenVal3("persistance", "oui");
+    const persistanceDetail = persistance === "oui" ? val("persistance-detail", "Le manquement est toujours en cours.") : "Non renseign\xE9";
+    let blocRepresentant = "";
+    if (representant) {
+      blocRepresentant = "Copie : " + representant;
+    }
+    return {
+      identiteBailleur: val("identite-bailleur", "Non renseign\xE9"),
+      adresseBailleur: val("adresse-bailleur", "Non renseign\xE9"),
+      representantBailleur: representant,
+      blocRepresentant,
+      identitePreneur: val("identite-preneur", "Non renseign\xE9"),
+      adressePreneur: val("adresse-preneur", "Non renseign\xE9"),
+      adresseLocaux: val("adresse-locaux", "Non renseign\xE9"),
+      precisionLocal: precision ? ", " + precision : "",
+      dateSignatureBail: formatDateFr2("date-bail"),
+      obligationsInexecutees: obligations.length ? obligations.join(" ; ") : "Non renseign\xE9",
+      descriptionFactuelle: val("description-faits", "Non renseign\xE9"),
+      dateDebutManquement: formatDateFr2("date-debut-manquement"),
+      persistanceDetail,
+      impossibiliteUsage: val("impossibilite-usage", "Non renseign\xE9"),
+      consequencesConcretes: consequences.length ? consequences.join(", ") : "Non renseign\xE9",
+      mesuresDemandees: mesures.length ? mesures.join(" ; ") : "Non renseign\xE9",
+      delaiRaisonnable: val("delai-raisonnable", "Non renseign\xE9"),
+      listePieces: val("liste-pieces", "N\xE9ant")
+    };
+  }
+  var OBLIGATION_LABELS, CONSEQUENCE_LABELS;
+  var init_answers4 = __esm({
+    "js/contract/mise-en-demeure/answers.js"() {
+      init_utils();
+      OBLIGATION_LABELS = {
+        reparations: "grosses r\xE9parations, v\xE9tust\xE9, vice de construction, non-conformit\xE9 pr\xE9existante ou structure",
+        jouissance: "d\xE9livrance conforme, jouissance paisible, vices, grosses r\xE9parations, absence de trouble",
+        travaux: "r\xE9partition des travaux et conformit\xE9 professionnelle",
+        confidentialite: "confidentialit\xE9, secret professionnel et acc\xE8s aux locaux"
+      };
+      CONSEQUENCE_LABELS = {
+        fermeture: "Fermeture",
+        annulation: "Annulation de soins",
+        interdiction: "Interdiction administrative",
+        penal: "Risque p\xE9nal",
+        acces: "Perte d'acc\xE8s",
+        confidentialite: "Perte de confidentialit\xE9",
+        degats: "D\xE9g\xE2ts mat\xE9riels",
+        sante: "Risque de sant\xE9 pour les personnes"
+      };
+    }
+  });
+
+  // js/contract/mise-en-demeure/constants.js
+  var TEMPLATE_URL3, PDF_FILENAME4, EMBEDDED_TEMPLATE_MIN_LENGTH4;
+  var init_constants4 = __esm({
+    "js/contract/mise-en-demeure/constants.js"() {
+      TEMPLATE_URL3 = "./templates/mise-en-demeure-bailleur-template.txt";
+      PDF_FILENAME4 = "mise-en-demeure-bailleur-medlex.pdf";
+      EMBEDDED_TEMPLATE_MIN_LENGTH4 = 200;
+    }
+  });
+
+  // js/contract/mise-en-demeure/template-engine.js
+  async function loadTemplate4() {
+    const embedded = typeof window !== "undefined" ? String(window.__MEDLEX_MISE_EN_DEMEURE_TEMPLATE__ || "") : "";
+    if (embedded.length >= EMBEDDED_TEMPLATE_MIN_LENGTH4) {
+      return embedded;
+    }
+    if (isFileProtocol2()) {
+      throw new Error(
+        "Mod\xE8le embarqu\xE9 manquant (medlex-mise-en-demeure-template-embedded.js). Rechargez la page ou ouvrez le site via GitHub Pages."
+      );
+    }
+    const res = await fetch(TEMPLATE_URL3);
+    if (!res.ok) {
+      throw new Error("Impossible de charger le mod\xE8le de mise en demeure (" + res.status + ").");
+    }
+    return await res.text();
+  }
+  function applyReplacements4(text, a) {
+    const pairs = [
+      ["[IDENTITE_PRENEUR]", a.identitePreneur],
+      ["[ADRESSE_PRENEUR]", a.adressePreneur],
+      ["[IDENTITE_BAILLEUR]", a.identiteBailleur],
+      ["[ADRESSE_BAILLEUR]", a.adresseBailleur],
+      ["[BLOC_REPRESENTANT]", a.blocRepresentant || ""],
+      ["[DATE_SIGNATURE_BAIL]", a.dateSignatureBail],
+      ["[ADRESSE_LOCAUX]", a.adresseLocaux],
+      ["[PRECISION_LOCAL]", a.precisionLocal || ""],
+      ["[OBLIGATIONS_INEXECUTEES]", a.obligationsInexecutees],
+      ["[DESCRIPTION_FACTUELLE]", a.descriptionFactuelle],
+      ["[DATE_DEBUT_MANQUEMENT]", a.dateDebutManquement],
+      ["[PERSISTANCE_DETAIL]", a.persistanceDetail],
+      ["[IMPOSSIBILITE_USAGE]", a.impossibiliteUsage],
+      ["[CONSEQUENCES_CONCRETES]", a.consequencesConcretes],
+      ["[MESURES_DEMANDEES]", a.mesuresDemandees],
+      ["[DELAI_RAISONNABLE]", a.delaiRaisonnable],
+      ["[LISTE_PIECES]", a.listePieces]
+    ];
+    let out = text;
+    pairs.forEach(function(pair) {
+      out = out.split(pair[0]).join(String(pair[1] != null ? pair[1] : ""));
+    });
+    return out.replace(/\n{3,}/g, "\n\n").replace(/^[ \t]+$/gm, "").trim();
+  }
+  function buildContractText4(templateRaw, a) {
+    return applyReplacements4(templateRaw, a);
+  }
+  var init_template_engine4 = __esm({
+    "js/contract/mise-en-demeure/template-engine.js"() {
+      init_constants4();
+      init_utils();
+    }
+  });
+
+  // js/contract/mise-en-demeure/render-html.js
+  function collectHighlightValues4(a) {
+    const candidates = [
+      a.identiteBailleur,
+      a.adresseBailleur,
+      a.representantBailleur,
+      a.identitePreneur,
+      a.adressePreneur,
+      a.adresseLocaux,
+      a.dateSignatureBail,
+      a.dateDebutManquement,
+      a.delaiRaisonnable
+    ];
+    if (a.precisionLocal) {
+      candidates.push(String(a.precisionLocal).replace(/^,\s*/, ""));
+    }
+    const values = [];
+    for (const v of candidates) {
+      const s = String(v || "").trim();
+      if (!s || s === "Non renseign\xE9" || s === "N\xE9ant") continue;
+      if (!values.includes(s)) values.push(s);
+    }
+    values.sort(function(x, y) {
+      return y.length - x.length;
+    });
+    return values;
+  }
+  function highlightAnswerValuesInLine4(line, values) {
+    let out = escapeHtml(line);
+    for (const v of values) {
+      const esc = escapeHtml(v);
+      out = out.replace(new RegExp(escapeRegExp(esc), "g"), "<strong>" + esc + "</strong>");
+    }
+    return out;
+  }
+  function buildContractRenderedHtml4(bodyText, a) {
+    const highlightValues = collectHighlightValues4(a);
+    return bodyText.split("\n").map(function(line) {
+      return line.trim() === "" ? "<br />" : '<p style="margin:0 0 8px;line-height:1.5">' + highlightAnswerValuesInLine4(line, highlightValues) + "</p>";
+    }).join("");
+  }
+  var init_render_html4 = __esm({
+    "js/contract/mise-en-demeure/render-html.js"() {
+      init_utils();
+    }
+  });
+
+  // js/contract/mise-en-demeure/medlex-mise-en-demeure-contract.js
+  var medlex_mise_en_demeure_contract_exports = {};
+  var init_medlex_mise_en_demeure_contract = __esm({
+    "js/contract/mise-en-demeure/medlex-mise-en-demeure-contract.js"() {
+      init_snapshot4();
+      init_answers4();
+      init_template_engine4();
+      init_render_html4();
+      init_constants4();
+      window.MedLexMiseEnDemeureContract = {
+        loadTemplate: loadTemplate4,
+        collectAnswers: collectAnswers4,
+        buildContractText: buildContractText4,
+        buildContractRenderedHtml: buildContractRenderedHtml4,
+        collectQuestionnaireSnapshot: collectQuestionnaireSnapshot4,
+        applyQuestionnaireSnapshot: applyQuestionnaireSnapshot4,
+        PDF_FILENAME: PDF_FILENAME4
+      };
+    }
+  });
+
   // js/contrat-page.js
   function loadScript(src) {
     return new Promise(function(resolve, reject) {
@@ -2674,7 +2925,7 @@
     if (!doc) return;
     var href = questionnaireHref || window.ParcoursType && window.ParcoursType.questionnaireUrl() || "questionnaire.html";
     var parcours = window.ParcoursType && window.ParcoursType.get();
-    var title = parcours === "collaboration" ? "Contrat de collaboration infirmier lib\xE9ral" : parcours === "fin-de-bail" ? "Fin de bail professionnel" : "Contrat de remplacement infirmier lib\xE9ral";
+    var title = parcours === "collaboration" ? "Contrat de collaboration infirmier lib\xE9ral" : parcours === "fin-de-bail" ? "Fin de bail professionnel" : parcours === "mise-en-demeure" ? "Mise en demeure du bailleur" : "Contrat de remplacement infirmier lib\xE9ral";
     if (guided) guided.innerHTML = "";
     if (toggle) toggle.classList.add("ac-hidden");
     doc.classList.remove("ac-hidden");
@@ -2699,6 +2950,12 @@
     docEl.innerHTML = '<p class="ac-contract-doc__title">Fin de bail professionnel</p><p class="ac-contract-doc__subtitle">' + escapeHtml2(subtitle) + " \u2014 " + parties + '</p><div class="ac-contract-doc__body">' + bodyHtml + "</div>";
     return { bodyText, bodyHtml };
   }
+  function renderMiseEnDemeureContract(docEl, bodyText, answers, Contract) {
+    var parties = escapeHtml2(answers.identitePreneur || "") + " \u2192 " + escapeHtml2(answers.identiteBailleur || "");
+    var bodyHtml = Contract.buildContractRenderedHtml(bodyText, answers);
+    docEl.innerHTML = '<p class="ac-contract-doc__title">Mise en demeure du bailleur</p><p class="ac-contract-doc__subtitle">' + parties + '</p><div class="ac-contract-doc__body">' + bodyHtml + "</div>";
+    return { bodyText, bodyHtml };
+  }
   function mountGuidedContractView(parcours, bodyText, bodyHtml) {
     if (!window.MedLexContractGuided) return;
     window.MedLexContractGuided.mount({
@@ -2711,15 +2968,15 @@
   function updatePageChrome(parcours) {
     var docEl = document.getElementById("contract-doc");
     if (docEl) {
-      var label = parcours === "collaboration" ? "Aper\xE7u du contrat de collaboration" : parcours === "fin-de-bail" ? "Aper\xE7u du courrier de fin de bail" : "Aper\xE7u du contrat de remplacement";
+      var label = parcours === "collaboration" ? "Aper\xE7u du contrat de collaboration" : parcours === "fin-de-bail" ? "Aper\xE7u du courrier de fin de bail" : parcours === "mise-en-demeure" ? "Aper\xE7u de la mise en demeure" : "Aper\xE7u du contrat de remplacement";
       docEl.setAttribute("aria-label", label);
     }
     var pageTitle = document.querySelector(".ac-title--page");
-    if (pageTitle && parcours === "fin-de-bail") {
+    if (pageTitle && (parcours === "fin-de-bail" || parcours === "mise-en-demeure")) {
       pageTitle.textContent = "Ton courrier";
     }
     var micro = document.querySelector(".ac-main > .ac-microcopy");
-    if (micro && parcours === "fin-de-bail") {
+    if (micro && (parcours === "fin-de-bail" || parcours === "mise-en-demeure")) {
       micro.textContent = "Paiement confirm\xE9 \u2014 parcours le courrier, ou consulte le texte int\xE9gral avant la signature.";
     }
   }
@@ -2923,6 +3180,50 @@
       if (pdfBtn) pdfBtn.disabled = true;
     }
   }
+  async function initMiseEnDemeureContrat(docEl, pdfBtn) {
+    var qHref = "questionnaire-mise-en-demeure.html";
+    var snap = window.ParcoursMiseEnDemeureSnapshot && window.ParcoursMiseEnDemeureSnapshot.load();
+    if (!snap) {
+      showError(
+        "Aucune r\xE9ponse au questionnaire n\u2019a \xE9t\xE9 trouv\xE9e. Compl\xE8te le questionnaire pour g\xE9n\xE9rer ton courrier.",
+        qHref
+      );
+      if (pdfBtn) pdfBtn.disabled = true;
+      return;
+    }
+    if (!window.ParcoursMiseEnDemeureSnapshot.apply(snap)) {
+      showError("Impossible de restaurer les r\xE9ponses du questionnaire.", qHref);
+      if (pdfBtn) pdfBtn.disabled = true;
+      return;
+    }
+    try {
+      await loadScript("../medlex-mise-en-demeure-template-embedded.js");
+      await Promise.resolve().then(() => (init_medlex_mise_en_demeure_contract(), medlex_mise_en_demeure_contract_exports));
+      var Contract = window.MedLexMiseEnDemeureContract;
+      var answers = Contract.collectAnswers();
+      var templateRaw = await Contract.loadTemplate();
+      var bodyText = Contract.buildContractText(templateRaw, answers);
+      var rendered = renderMiseEnDemeureContract(docEl, bodyText, answers, Contract);
+      docEl.removeAttribute("aria-busy");
+      mountGuidedContractView("mise-en-demeure", rendered.bodyText, rendered.bodyHtml);
+      wirePdfDownload(
+        pdfBtn,
+        docEl,
+        Contract.PDF_FILENAME || "mise-en-demeure-bailleur-medlex.pdf",
+        {
+          bodyText: rendered.bodyText,
+          parcours: "mise-en-demeure"
+        }
+      );
+    } catch (e) {
+      console.error(e);
+      showError(
+        e instanceof Error ? "Erreur lors de la g\xE9n\xE9ration : " + e.message : "Erreur lors de la g\xE9n\xE9ration du courrier.",
+        qHref
+      );
+      if (pdfBtn) pdfBtn.disabled = true;
+    }
+  }
   async function initContratPage() {
     var docEl = document.getElementById("contract-doc");
     var pdfBtn = document.getElementById("download-pdf");
@@ -2933,6 +3234,8 @@
       await initCollaborationContrat(docEl, pdfBtn);
     } else if (parcours === "fin-de-bail") {
       await initFinDeBailContrat(docEl, pdfBtn);
+    } else if (parcours === "mise-en-demeure") {
+      await initMiseEnDemeureContrat(docEl, pdfBtn);
     } else {
       await initRemplacementContrat(docEl, pdfBtn);
     }

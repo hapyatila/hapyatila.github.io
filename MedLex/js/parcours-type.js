@@ -9,6 +9,7 @@
     remplacement: true,
     collaboration: true,
     "fin-de-bail": true,
+    "mise-en-demeure": true,
   };
 
   function normalize(type) {
@@ -40,10 +41,15 @@
     return get() === "fin-de-bail";
   }
 
+  function isMiseEnDemeure() {
+    return get() === "mise-en-demeure";
+  }
+
   function questionnaireUrl() {
     var t = get();
     if (t === "collaboration") return "questionnaire-collaboration.html";
     if (t === "fin-de-bail") return "questionnaire-fin-de-bail.html";
+    if (t === "mise-en-demeure") return "questionnaire-mise-en-demeure.html";
     return "questionnaire.html";
   }
 
@@ -51,6 +57,7 @@
     var t = get();
     if (t === "collaboration") return "Contrat de collaboration";
     if (t === "fin-de-bail") return "Fin de bail professionnel";
+    if (t === "mise-en-demeure") return "Mise en demeure du bailleur";
     return "Contrat de remplacement";
   }
 
@@ -58,6 +65,7 @@
     var t = get();
     if (t === "collaboration") return "Collaboration";
     if (t === "fin-de-bail") return "Fin de bail";
+    if (t === "mise-en-demeure") return "Mise en demeure";
     return "Remplacement";
   }
 
@@ -87,6 +95,7 @@
     get: get,
     isCollaboration: isCollaboration,
     isFinDeBail: isFinDeBail,
+    isMiseEnDemeure: isMiseEnDemeure,
     questionnaireUrl: questionnaireUrl,
     label: label,
     labelShort: labelShort,

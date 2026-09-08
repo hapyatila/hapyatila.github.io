@@ -66,6 +66,8 @@
         title.textContent = 'Ce qui sera dans ton contrat de collaboration';
       } else if (parcours === 'fin-de-bail') {
         title.textContent = 'Ce qui sera dans ton courrier de fin de bail';
+      } else if (parcours === 'mise-en-demeure') {
+        title.textContent = 'Ce qui sera dans ta mise en demeure';
       } else {
         title.textContent = 'Ce qui sera dans ton contrat';
       }
@@ -75,6 +77,8 @@
       document.title = 'Aperçu du contrat de collaboration · Au Clair';
     } else if (parcours === 'fin-de-bail') {
       document.title = 'Aperçu fin de bail · Au Clair';
+    } else if (parcours === 'mise-en-demeure') {
+      document.title = 'Aperçu mise en demeure · Au Clair';
     }
   }
 

@@ -131,6 +131,34 @@
     },
   ];
 
+  var MISE_EN_DEMEURE = [
+    {
+      id: 'cadre-med',
+      title: 'Cadre de la mise en demeure',
+      desc: 'Premier courrier pour faute du bailleur — pas une résolution anticipée. Bail professionnel uniquement.',
+    },
+    {
+      id: 'manquements',
+      title: 'Manquements reprochés',
+      desc: 'Obligations inexécutées, description factuelle, persistance et impossibilité d’usage des locaux.',
+    },
+    {
+      id: 'preuves-med',
+      title: 'Preuves et pièces jointes',
+      desc: 'Éléments justificatifs listés dans le courrier (constat, photos, devis, expertise…).',
+    },
+    {
+      id: 'mesures',
+      title: 'Mise en conformité',
+      desc: 'Mesures demandées au bailleur et délai raisonnable pour y remédier.',
+    },
+    {
+      id: 'suite',
+      title: 'Suite possible',
+      desc: 'À défaut d’exécution, possibilité d’un second courrier de résolution anticipée — sans garantie judiciaire.',
+    },
+  ];
+
   /** @type {Record<string, {desc?: string, editStep?: number}>} */
   var COLLAB_ARTICLE_META = {
     preamble: {
@@ -291,6 +319,18 @@
     },
   };
 
+  var MISE_EN_DEMEURE_ARTICLE_META = {
+    preamble: {
+      desc: 'Mise en demeure préalable pour faute du bailleur — faits, mesures demandées et délai.',
+      editSteps: [
+        { step: 1, label: 'Modifier les manquements' },
+        { step: 4, label: 'Modifier les faits' },
+        { step: 6, label: 'Modifier les mesures' },
+        { step: 7, label: 'Modifier les parties' },
+      ],
+    },
+  };
+
   function articleKeyFromSection(section) {
     if (section.isPreamble) return 'preamble';
     var m = String(section.heading || '').match(/Article\s+(\d+(?:\.\d+)?)(?:er|re)?\b/i);
@@ -316,11 +356,15 @@
         ? COLLAB_ARTICLE_META
         : parcours === 'fin-de-bail'
           ? FIN_BAIL_ARTICLE_META
-          : REMPL_ARTICLE_META;
+          : parcours === 'mise-en-demeure'
+            ? MISE_EN_DEMEURE_ARTICLE_META
+            : REMPL_ARTICLE_META;
     var extra = store[key] || {};
     var title =
-      parcours === 'fin-de-bail' && section.isPreamble
-        ? 'Courrier de fin de bail'
+      (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure') && section.isPreamble
+        ? parcours === 'mise-en-demeure'
+          ? 'Mise en demeure du bailleur'
+          : 'Courrier de fin de bail'
         : section.isPreamble
           ? 'Préambule et parties'
           : titleFromHeading(section.heading);
@@ -346,6 +390,7 @@
     var base = 'questionnaire.html';
     if (parcours === 'collaboration') base = 'questionnaire-collaboration.html';
     if (parcours === 'fin-de-bail') base = 'questionnaire-fin-de-bail.html';
+    if (parcours === 'mise-en-demeure') base = 'questionnaire-mise-en-demeure.html';
     if (editStep == null) return null;
     return base + '?step=' + editStep + '&from=contrat';
   }
@@ -354,16 +399,21 @@
     collaboration: COLLABORATION,
     remplacement: REMPLACEMENT,
     'fin-de-bail': FIN_DE_BAIL,
+    'mise-en-demeure': MISE_EN_DEMEURE,
     forApercu: function (parcours) {
       var list =
         parcours === 'collaboration'
           ? COLLABORATION
           : parcours === 'fin-de-bail'
             ? FIN_DE_BAIL
-            : REMPLACEMENT;
+            : parcours === 'mise-en-demeure'
+              ? MISE_EN_DEMEURE
+              : REMPLACEMENT;
       return list
         .filter(function (t) {
-          return parcours === 'fin-de-bail' ? true : t.id !== 'cadre';
+          return parcours === 'fin-de-bail' || parcours === 'mise-en-demeure'
+            ? true
+            : t.id !== 'cadre';
         })
         .map(function (t) {
           return { themeId: t.id, title: t.title, desc: t.desc };

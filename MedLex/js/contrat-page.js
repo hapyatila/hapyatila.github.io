@@ -42,7 +42,9 @@ function showError(message, questionnaireHref) {
       ? 'Contrat de collaboration infirmier libéral'
       : parcours === 'fin-de-bail'
         ? 'Fin de bail professionnel'
-        : 'Contrat de remplacement infirmier libéral';
+        : parcours === 'mise-en-demeure'
+          ? 'Mise en demeure du bailleur'
+          : 'Contrat de remplacement infirmier libéral';
   if (guided) guided.innerHTML = '';
   if (toggle) toggle.classList.add('ac-hidden');
   doc.classList.remove('ac-hidden');
@@ -120,6 +122,25 @@ function renderFinDeBailContract(docEl, bodyText, answers, Contract) {
   return { bodyText: bodyText, bodyHtml: bodyHtml };
 }
 
+function renderMiseEnDemeureContract(docEl, bodyText, answers, Contract) {
+  var parties =
+    escapeHtml(answers.identitePreneur || '') +
+    ' → ' +
+    escapeHtml(answers.identiteBailleur || '');
+
+  var bodyHtml = Contract.buildContractRenderedHtml(bodyText, answers);
+  docEl.innerHTML =
+    '<p class="ac-contract-doc__title">Mise en demeure du bailleur</p>' +
+    '<p class="ac-contract-doc__subtitle">' +
+    parties +
+    '</p>' +
+    '<div class="ac-contract-doc__body">' +
+    bodyHtml +
+    '</div>';
+
+  return { bodyText: bodyText, bodyHtml: bodyHtml };
+}
+
 function mountGuidedContractView(parcours, bodyText, bodyHtml) {
   if (!window.MedLexContractGuided) return;
   window.MedLexContractGuided.mount({
@@ -138,15 +159,17 @@ function updatePageChrome(parcours) {
         ? 'Aperçu du contrat de collaboration'
         : parcours === 'fin-de-bail'
           ? 'Aperçu du courrier de fin de bail'
-          : 'Aperçu du contrat de remplacement';
+          : parcours === 'mise-en-demeure'
+            ? 'Aperçu de la mise en demeure'
+            : 'Aperçu du contrat de remplacement';
     docEl.setAttribute('aria-label', label);
   }
   var pageTitle = document.querySelector('.ac-title--page');
-  if (pageTitle && parcours === 'fin-de-bail') {
+  if (pageTitle && (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure')) {
     pageTitle.textContent = 'Ton courrier';
   }
   var micro = document.querySelector('.ac-main > .ac-microcopy');
-  if (micro && parcours === 'fin-de-bail') {
+  if (micro && (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure')) {
     micro.textContent =
       'Paiement confirmé — parcours le courrier, ou consulte le texte intégral avant la signature.';
   }
@@ -400,6 +423,59 @@ async function initFinDeBailContrat(docEl, pdfBtn) {
   }
 }
 
+async function initMiseEnDemeureContrat(docEl, pdfBtn) {
+  var qHref = 'questionnaire-mise-en-demeure.html';
+
+  var snap =
+    window.ParcoursMiseEnDemeureSnapshot && window.ParcoursMiseEnDemeureSnapshot.load();
+  if (!snap) {
+    showError(
+      'Aucune réponse au questionnaire n’a été trouvée. Complète le questionnaire pour générer ton courrier.',
+      qHref
+    );
+    if (pdfBtn) pdfBtn.disabled = true;
+    return;
+  }
+
+  if (!window.ParcoursMiseEnDemeureSnapshot.apply(snap)) {
+    showError('Impossible de restaurer les réponses du questionnaire.', qHref);
+    if (pdfBtn) pdfBtn.disabled = true;
+    return;
+  }
+
+  try {
+    await loadScript('../medlex-mise-en-demeure-template-embedded.js');
+    await import('./contract/mise-en-demeure/medlex-mise-en-demeure-contract.js');
+    var Contract = window.MedLexMiseEnDemeureContract;
+
+    var answers = Contract.collectAnswers();
+    var templateRaw = await Contract.loadTemplate();
+    var bodyText = Contract.buildContractText(templateRaw, answers);
+    var rendered = renderMiseEnDemeureContract(docEl, bodyText, answers, Contract);
+    docEl.removeAttribute('aria-busy');
+    mountGuidedContractView('mise-en-demeure', rendered.bodyText, rendered.bodyHtml);
+
+    wirePdfDownload(
+      pdfBtn,
+      docEl,
+      Contract.PDF_FILENAME || 'mise-en-demeure-bailleur-medlex.pdf',
+      {
+        bodyText: rendered.bodyText,
+        parcours: 'mise-en-demeure',
+      }
+    );
+  } catch (e) {
+    console.error(e);
+    showError(
+      e instanceof Error
+        ? 'Erreur lors de la génération : ' + e.message
+        : 'Erreur lors de la génération du courrier.',
+      qHref
+    );
+    if (pdfBtn) pdfBtn.disabled = true;
+  }
+}
+
 async function initContratPage() {
   var docEl = document.getElementById('contract-doc');
   var pdfBtn = document.getElementById('download-pdf');
@@ -412,6 +488,8 @@ async function initContratPage() {
     await initCollaborationContrat(docEl, pdfBtn);
   } else if (parcours === 'fin-de-bail') {
     await initFinDeBailContrat(docEl, pdfBtn);
+  } else if (parcours === 'mise-en-demeure') {
+    await initMiseEnDemeureContrat(docEl, pdfBtn);
   } else {
     await initRemplacementContrat(docEl, pdfBtn);
   }

@@ -163,6 +163,19 @@ export const FIN_BAIL_ARTICLE_META = {
   },
 };
 
+/** @type {Record<string, { desc?: string, editStep?: number, editSteps?: { step: number, label: string }[] }>} */
+export const MISE_EN_DEMEURE_ARTICLE_META = {
+  preamble: {
+    desc: 'Mise en demeure préalable pour faute du bailleur — faits, mesures demandées et délai.',
+    editSteps: [
+      { step: 1, label: 'Modifier les manquements' },
+      { step: 4, label: 'Modifier les faits' },
+      { step: 6, label: 'Modifier les mesures' },
+      { step: 7, label: 'Modifier les parties' },
+    ],
+  },
+};
+
 function isArticleLine(line) {
   return /^(Article|ARTICLE)\s+/i.test(String(line || '').trim());
 }
@@ -198,11 +211,15 @@ export function getArticleMeta(parcours, section) {
       ? COLLAB_ARTICLE_META
       : parcours === 'fin-de-bail'
         ? FIN_BAIL_ARTICLE_META
-        : REMPL_ARTICLE_META;
+        : parcours === 'mise-en-demeure'
+          ? MISE_EN_DEMEURE_ARTICLE_META
+          : REMPL_ARTICLE_META;
   const extra = store[key] || {};
   const title =
-    parcours === 'fin-de-bail' && section.isPreamble
-      ? 'Courrier de fin de bail'
+    (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure') && section.isPreamble
+      ? parcours === 'mise-en-demeure'
+        ? 'Mise en demeure du bailleur'
+        : 'Courrier de fin de bail'
       : section.isPreamble
         ? 'Préambule et parties'
         : titleFromHeading(section.heading);
