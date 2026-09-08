@@ -68,6 +68,8 @@
         title.textContent = 'Ce qui sera dans ton courrier de fin de bail';
       } else if (parcours === 'mise-en-demeure') {
         title.textContent = 'Ce qui sera dans ta mise en demeure';
+      } else if (parcours === 'bail-professionnel') {
+        title.textContent = 'Ce qui sera dans ton bail professionnel';
       } else {
         title.textContent = 'Ce qui sera dans ton contrat';
       }
@@ -79,6 +81,8 @@
       document.title = 'Aperçu fin de bail · Au Clair';
     } else if (parcours === 'mise-en-demeure') {
       document.title = 'Aperçu mise en demeure · Au Clair';
+    } else if (parcours === 'bail-professionnel') {
+      document.title = 'Aperçu bail professionnel · Au Clair';
     }
   }
 

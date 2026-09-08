@@ -8,6 +8,7 @@
     collaboration: true,
     "fin-de-bail": true,
     "mise-en-demeure": true,
+    "bail-professionnel": true,
   };
 
   var params = new URLSearchParams(window.location.search);

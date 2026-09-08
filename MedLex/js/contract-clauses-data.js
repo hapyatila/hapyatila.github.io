@@ -159,6 +159,39 @@
     },
   ];
 
+  var BAIL_PROFESSIONNEL = [
+    {
+      id: 'parties-bail',
+      title: 'Parties et locaux',
+      desc: 'Identification du Bailleur et du Preneur, désignation des locaux et destination exclusivement professionnelle.',
+    },
+    {
+      id: 'duree-bail',
+      title: 'Durée et congés',
+      desc: 'Bail de 6 ans, congé du Preneur avec préavis de 6 mois, non-renouvellement par le Bailleur à l’échéance.',
+    },
+    {
+      id: 'loyer-charges',
+      title: 'Loyer, charges et dépôt',
+      desc: 'Loyer mensuel, TVA éventuelle, révision ILAT, provision sur charges et dépôt de garantie.',
+    },
+    {
+      id: 'obligations-bail',
+      title: 'Obligations des parties',
+      desc: 'Obligations du Bailleur et du Preneur, accessibilité, déchets DASRI, plaque et assurances.',
+    },
+    {
+      id: 'cession-sousloc',
+      title: 'Cession et sous-location',
+      desc: 'Cadre de la cession du bail, sous-location, remplacement/collaboration et droit de préférence.',
+    },
+    {
+      id: 'fin-bail-clauses',
+      title: 'Fin du bail et garanties',
+      desc: 'Clause résolutoire, intérêts de retard, diagnostics, confidentialité et restitution des locaux.',
+    },
+  ];
+
   /** @type {Record<string, {desc?: string, editStep?: number}>} */
   var COLLAB_ARTICLE_META = {
     preamble: {
@@ -331,6 +364,65 @@
     },
   };
 
+  var BAIL_PRO_ARTICLE_META = {
+    preamble: {
+      desc: 'Identification du Bailleur et du Preneur, et rappel du cadre du bail professionnel.',
+      editSteps: [
+        { step: 0, label: 'Modifier le bailleur' },
+        { step: 1, label: 'Modifier le preneur' },
+      ],
+    },
+    '1': {
+      desc: 'Désignation des locaux loués — adresse, superficie, pièces et nature de l’immeuble.',
+      editStep: 2,
+    },
+    '2': {
+      desc: 'Destination exclusivement professionnelle : cabinet infirmier libéral.',
+    },
+    '3': {
+      desc: 'Durée de 6 ans — dates de prise d’effet et d’expiration.',
+      editStep: 3,
+    },
+    '4': {
+      desc: 'Congé du Preneur, non-renouvellement par le Bailleur et résiliation amiable.',
+    },
+    '5': {
+      desc: 'Loyer mensuel, TVA éventuelle et modalités de paiement.',
+      editStep: 4,
+    },
+    '6': { desc: 'Révision annuelle du loyer selon l’indice ILAT.' },
+    '7': {
+      desc: 'Charges, taxes et provision mensuelle.',
+      editStep: 5,
+    },
+    '8': {
+      desc: 'Dépôt de garantie versé à la signature.',
+      editStep: 5,
+    },
+    '9': { desc: 'États des lieux d’entrée et de sortie.' },
+    '10': { desc: 'Obligations du Bailleur.' },
+    '11': { desc: 'Obligations du Preneur.' },
+    '12': { desc: 'Accessibilité, aménagements et conformité professionnelle.' },
+    '13': { desc: 'Gestion des déchets professionnels, notamment DASRI.' },
+    '14': { desc: 'Plaque professionnelle.' },
+    '15': { desc: 'Assurances à souscrire et maintenir.' },
+    '16': { desc: 'Cession du bail.' },
+    '17': {
+      desc: 'Sous-location, remplacement, collaboration et partage de locaux.',
+      editStep: 6,
+    },
+    '18': {
+      desc: 'Droit de préférence en cas de vente des locaux.',
+      editStep: 7,
+    },
+    '19': { desc: 'Clause résolutoire.' },
+    '20': { desc: 'Intérêts de retard et indemnités d’occupation.' },
+    '21': { desc: 'Diagnostics et informations remis au Preneur.' },
+    '22': { desc: 'Confidentialité et secret professionnel.' },
+    '23': { desc: 'Restitution des locaux en fin de bail.' },
+    '24': { desc: 'Élection de domicile.' },
+  };
+
   function articleKeyFromSection(section) {
     if (section.isPreamble) return 'preamble';
     var m = String(section.heading || '').match(/Article\s+(\d+(?:\.\d+)?)(?:er|re)?\b/i);
@@ -358,7 +450,9 @@
           ? FIN_BAIL_ARTICLE_META
           : parcours === 'mise-en-demeure'
             ? MISE_EN_DEMEURE_ARTICLE_META
-            : REMPL_ARTICLE_META;
+            : parcours === 'bail-professionnel'
+              ? BAIL_PRO_ARTICLE_META
+              : REMPL_ARTICLE_META;
     var extra = store[key] || {};
     var title =
       (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure') && section.isPreamble
@@ -366,7 +460,9 @@
           ? 'Mise en demeure du bailleur'
           : 'Courrier de fin de bail'
         : section.isPreamble
-          ? 'Préambule et parties'
+          ? parcours === 'bail-professionnel'
+            ? 'Préambule et parties'
+            : 'Préambule et parties'
           : titleFromHeading(section.heading);
 
     var editSteps = extra.editSteps
@@ -391,6 +487,7 @@
     if (parcours === 'collaboration') base = 'questionnaire-collaboration.html';
     if (parcours === 'fin-de-bail') base = 'questionnaire-fin-de-bail.html';
     if (parcours === 'mise-en-demeure') base = 'questionnaire-mise-en-demeure.html';
+    if (parcours === 'bail-professionnel') base = 'questionnaire-bail-professionnel.html';
     if (editStep == null) return null;
     return base + '?step=' + editStep + '&from=contrat';
   }
@@ -400,6 +497,7 @@
     remplacement: REMPLACEMENT,
     'fin-de-bail': FIN_DE_BAIL,
     'mise-en-demeure': MISE_EN_DEMEURE,
+    'bail-professionnel': BAIL_PROFESSIONNEL,
     forApercu: function (parcours) {
       var list =
         parcours === 'collaboration'
@@ -408,10 +506,12 @@
             ? FIN_DE_BAIL
             : parcours === 'mise-en-demeure'
               ? MISE_EN_DEMEURE
-              : REMPLACEMENT;
+              : parcours === 'bail-professionnel'
+                ? BAIL_PROFESSIONNEL
+                : REMPLACEMENT;
       return list
         .filter(function (t) {
-          return parcours === 'fin-de-bail' || parcours === 'mise-en-demeure'
+          return parcours === 'fin-de-bail' || parcours === 'mise-en-demeure' || parcours === 'bail-professionnel'
             ? true
             : t.id !== 'cadre';
         })

@@ -176,6 +176,66 @@ export const MISE_EN_DEMEURE_ARTICLE_META = {
   },
 };
 
+/** @type {Record<string, { desc?: string, editStep?: number, editSteps?: { step: number, label: string }[] }>} */
+export const BAIL_PRO_ARTICLE_META = {
+  preamble: {
+    desc: 'Identification du Bailleur et du Preneur, et rappel du cadre du bail professionnel.',
+    editSteps: [
+      { step: 0, label: 'Modifier le bailleur' },
+      { step: 1, label: 'Modifier le preneur' },
+    ],
+  },
+  '1': {
+    desc: 'Désignation des locaux loués — adresse, superficie, pièces et nature de l’immeuble.',
+    editStep: 2,
+  },
+  '2': {
+    desc: 'Destination exclusivement professionnelle : cabinet infirmier libéral.',
+  },
+  '3': {
+    desc: 'Durée de 6 ans — dates de prise d’effet et d’expiration.',
+    editStep: 3,
+  },
+  '4': {
+    desc: 'Congé du Preneur, non-renouvellement par le Bailleur et résiliation amiable.',
+  },
+  '5': {
+    desc: 'Loyer mensuel, TVA éventuelle et modalités de paiement.',
+    editStep: 4,
+  },
+  '6': { desc: 'Révision annuelle du loyer selon l’indice ILAT.' },
+  '7': {
+    desc: 'Charges, taxes et provision mensuelle.',
+    editStep: 5,
+  },
+  '8': {
+    desc: 'Dépôt de garantie versé à la signature.',
+    editStep: 5,
+  },
+  '9': { desc: 'États des lieux d’entrée et de sortie.' },
+  '10': { desc: 'Obligations du Bailleur.' },
+  '11': { desc: 'Obligations du Preneur.' },
+  '12': { desc: 'Accessibilité, aménagements et conformité professionnelle.' },
+  '13': { desc: 'Gestion des déchets professionnels, notamment DASRI.' },
+  '14': { desc: 'Plaque professionnelle.' },
+  '15': { desc: 'Assurances à souscrire et maintenir.' },
+  '16': { desc: 'Cession du bail.' },
+  '17': {
+    desc: 'Sous-location, remplacement, collaboration et partage de locaux.',
+    editStep: 6,
+  },
+  '18': {
+    desc: 'Droit de préférence en cas de vente des locaux.',
+    editStep: 7,
+  },
+  '19': { desc: 'Clause résolutoire.' },
+  '20': { desc: 'Intérêts de retard et indemnités d’occupation.' },
+  '21': { desc: 'Diagnostics et informations remis au Preneur.' },
+  '22': { desc: 'Confidentialité et secret professionnel.' },
+  '23': { desc: 'Restitution des locaux en fin de bail.' },
+  '24': { desc: 'Élection de domicile.' },
+};
+
 function isArticleLine(line) {
   return /^(Article|ARTICLE)\s+/i.test(String(line || '').trim());
 }
@@ -213,7 +273,9 @@ export function getArticleMeta(parcours, section) {
         ? FIN_BAIL_ARTICLE_META
         : parcours === 'mise-en-demeure'
           ? MISE_EN_DEMEURE_ARTICLE_META
-          : REMPL_ARTICLE_META;
+          : parcours === 'bail-professionnel'
+            ? BAIL_PRO_ARTICLE_META
+            : REMPL_ARTICLE_META;
   const extra = store[key] || {};
   const title =
     (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure') && section.isPreamble

@@ -67,7 +67,7 @@
   }
   function getArticleMeta(parcours, section) {
     const key = articleKeyFromSection(section);
-    const store = parcours === "collaboration" ? COLLAB_ARTICLE_META : parcours === "fin-de-bail" ? FIN_BAIL_ARTICLE_META : parcours === "mise-en-demeure" ? MISE_EN_DEMEURE_ARTICLE_META : REMPL_ARTICLE_META;
+    const store = parcours === "collaboration" ? COLLAB_ARTICLE_META : parcours === "fin-de-bail" ? FIN_BAIL_ARTICLE_META : parcours === "mise-en-demeure" ? MISE_EN_DEMEURE_ARTICLE_META : parcours === "bail-professionnel" ? BAIL_PRO_ARTICLE_META : REMPL_ARTICLE_META;
     const extra = store[key] || {};
     const title = (parcours === "fin-de-bail" || parcours === "mise-en-demeure") && section.isPreamble ? parcours === "mise-en-demeure" ? "Mise en demeure du bailleur" : "Courrier de fin de bail" : section.isPreamble ? "Pr\xE9ambule et parties" : titleFromHeading(section.heading);
     const editSteps = extra.editSteps ? extra.editSteps.slice() : extra.editStep != null ? [{ step: extra.editStep, label: "Modifier" }] : [];
@@ -116,7 +116,7 @@
       };
     });
   }
-  var COLLAB_ARTICLE_META, REMPL_ARTICLE_META, FIN_BAIL_ARTICLE_META, MISE_EN_DEMEURE_ARTICLE_META;
+  var COLLAB_ARTICLE_META, REMPL_ARTICLE_META, FIN_BAIL_ARTICLE_META, MISE_EN_DEMEURE_ARTICLE_META, BAIL_PRO_ARTICLE_META;
   var init_article_guide = __esm({
     "js/contract/article-guide.js"() {
       COLLAB_ARTICLE_META = {
@@ -284,6 +284,64 @@
             { step: 7, label: "Modifier les parties" }
           ]
         }
+      };
+      BAIL_PRO_ARTICLE_META = {
+        preamble: {
+          desc: "Identification du Bailleur et du Preneur, et rappel du cadre du bail professionnel.",
+          editSteps: [
+            { step: 0, label: "Modifier le bailleur" },
+            { step: 1, label: "Modifier le preneur" }
+          ]
+        },
+        "1": {
+          desc: "D\xE9signation des locaux lou\xE9s \u2014 adresse, superficie, pi\xE8ces et nature de l\u2019immeuble.",
+          editStep: 2
+        },
+        "2": {
+          desc: "Destination exclusivement professionnelle : cabinet infirmier lib\xE9ral."
+        },
+        "3": {
+          desc: "Dur\xE9e de 6 ans \u2014 dates de prise d\u2019effet et d\u2019expiration.",
+          editStep: 3
+        },
+        "4": {
+          desc: "Cong\xE9 du Preneur, non-renouvellement par le Bailleur et r\xE9siliation amiable."
+        },
+        "5": {
+          desc: "Loyer mensuel, TVA \xE9ventuelle et modalit\xE9s de paiement.",
+          editStep: 4
+        },
+        "6": { desc: "R\xE9vision annuelle du loyer selon l\u2019indice ILAT." },
+        "7": {
+          desc: "Charges, taxes et provision mensuelle.",
+          editStep: 5
+        },
+        "8": {
+          desc: "D\xE9p\xF4t de garantie vers\xE9 \xE0 la signature.",
+          editStep: 5
+        },
+        "9": { desc: "\xC9tats des lieux d\u2019entr\xE9e et de sortie." },
+        "10": { desc: "Obligations du Bailleur." },
+        "11": { desc: "Obligations du Preneur." },
+        "12": { desc: "Accessibilit\xE9, am\xE9nagements et conformit\xE9 professionnelle." },
+        "13": { desc: "Gestion des d\xE9chets professionnels, notamment DASRI." },
+        "14": { desc: "Plaque professionnelle." },
+        "15": { desc: "Assurances \xE0 souscrire et maintenir." },
+        "16": { desc: "Cession du bail." },
+        "17": {
+          desc: "Sous-location, remplacement, collaboration et partage de locaux.",
+          editStep: 6
+        },
+        "18": {
+          desc: "Droit de pr\xE9f\xE9rence en cas de vente des locaux.",
+          editStep: 7
+        },
+        "19": { desc: "Clause r\xE9solutoire." },
+        "20": { desc: "Int\xE9r\xEAts de retard et indemnit\xE9s d\u2019occupation." },
+        "21": { desc: "Diagnostics et informations remis au Preneur." },
+        "22": { desc: "Confidentialit\xE9 et secret professionnel." },
+        "23": { desc: "Restitution des locaux en fin de bail." },
+        "24": { desc: "\xC9lection de domicile." }
       };
     }
   });
@@ -2896,6 +2954,272 @@
     }
   });
 
+  // js/contract/bail-professionnel/snapshot.js
+  function collectQuestionnaireSnapshot5() {
+    if (window.ParcoursBailProfessionnelSnapshot) {
+      return window.ParcoursBailProfessionnelSnapshot.collect();
+    }
+    return null;
+  }
+  function applyQuestionnaireSnapshot5(snap) {
+    if (window.ParcoursBailProfessionnelSnapshot) {
+      return window.ParcoursBailProfessionnelSnapshot.apply(snap);
+    }
+    return false;
+  }
+  var init_snapshot5 = __esm({
+    "js/contract/bail-professionnel/snapshot.js"() {
+    }
+  });
+
+  // js/contract/bail-professionnel/answers.js
+  function hiddenVal4(id, fallback) {
+    const el = $(id);
+    if (!el) return fallback || "";
+    return el.value != null && String(el.value).trim() !== "" ? String(el.value).trim() : fallback || "";
+  }
+  function formatDateFr3(id) {
+    const raw = val(id);
+    if (!raw) return "Non renseign\xE9";
+    try {
+      return formatDate(raw) || raw;
+    } catch (e) {
+      return raw;
+    }
+  }
+  function collectAnswers5() {
+    const representant = val("representant-bailleur");
+    const precision = val("precision-local");
+    const nature = hiddenVal4("nature-immeuble", "monopropriete");
+    const tva = hiddenVal4("tva-applicable", "non");
+    const sousloc = hiddenVal4("sous-location", "interdite");
+    const preference = hiddenVal4("droit-preference", "non");
+    return {
+      identiteBailleur: val("identite-bailleur", "Non renseign\xE9"),
+      adresseBailleur: val("adresse-bailleur", "Non renseign\xE9"),
+      ligneRepresentant: representant ? "Repr\xE9sent\xE9 par : " + representant : "",
+      identitePreneur: val("identite-preneur", "Non renseign\xE9"),
+      ordinalPreneur: val("ordinal-preneur", "Non renseign\xE9"),
+      rppsPreneur: val("rpps-preneur", "Non renseign\xE9"),
+      adressePreneur: val("adresse-preneur", "Non renseign\xE9"),
+      adresseLocaux: val("adresse-locaux", "Non renseign\xE9"),
+      precisionLocal: precision || "\u2014",
+      superficie: val("superficie", "Non renseign\xE9"),
+      descriptionPieces: val("description-pieces", "Non renseign\xE9"),
+      natureImmeuble: nature,
+      natureAutreDetail: val("nature-autre", ""),
+      dateEffet: formatDateFr3("date-effet"),
+      dateExpiration: formatDateFr3("date-expiration"),
+      loyerHc: val("loyer-hc", "Non renseign\xE9"),
+      tvaApplicable: tva === "oui",
+      tauxTva: val("taux-tva", ""),
+      loyerTtc: val("loyer-ttc", ""),
+      provisionCharges: val("provision-charges", "Non renseign\xE9"),
+      depotGarantie: val("depot-garantie", "Non renseign\xE9"),
+      sousLocation: sousloc,
+      droitPreference: preference === "oui"
+    };
+  }
+  var init_answers5 = __esm({
+    "js/contract/bail-professionnel/answers.js"() {
+      init_utils();
+    }
+  });
+
+  // js/contract/bail-professionnel/constants.js
+  var TEMPLATE_URL4, PDF_FILENAME5, EMBEDDED_TEMPLATE_MIN_LENGTH5;
+  var init_constants5 = __esm({
+    "js/contract/bail-professionnel/constants.js"() {
+      TEMPLATE_URL4 = "./templates/bail-professionnel-template.txt";
+      PDF_FILENAME5 = "bail-professionnel-medlex.pdf";
+      EMBEDDED_TEMPLATE_MIN_LENGTH5 = 500;
+    }
+  });
+
+  // js/contract/bail-professionnel/template-engine.js
+  function stripBetween(text, startMarker, endMarker) {
+    const re = new RegExp(
+      escapeRegExp(startMarker) + "[\\s\\S]*?(?=" + escapeRegExp(endMarker) + "|$)",
+      "u"
+    );
+    return text.replace(re, "");
+  }
+  function applyConditionals3(raw, a) {
+    let text = raw;
+    if (a.natureImmeuble === "copropriete") {
+      text = stripBetween(text, "OPTION NATURE_MONO", "OPTION NATURE_COPRO");
+      text = stripBetween(text, "OPTION NATURE_AUTRE", "OPTION NATURE_END");
+      text = text.replace("OPTION NATURE_COPRO\n", "");
+    } else if (a.natureImmeuble === "autre") {
+      text = stripBetween(text, "OPTION NATURE_MONO", "OPTION NATURE_COPRO");
+      text = stripBetween(text, "OPTION NATURE_COPRO", "OPTION NATURE_AUTRE");
+      text = text.replace("OPTION NATURE_AUTRE\n", "");
+    } else {
+      text = stripBetween(text, "OPTION NATURE_COPRO", "OPTION NATURE_AUTRE");
+      text = stripBetween(text, "OPTION NATURE_AUTRE", "OPTION NATURE_END");
+      text = text.replace("OPTION NATURE_MONO\n", "");
+    }
+    text = text.replace("OPTION NATURE_END\n", "");
+    if (a.tvaApplicable) {
+      text = stripBetween(text, "OPTION TVA_NON", "OPTION TVA_OUI");
+      text = text.replace("OPTION TVA_OUI\n", "");
+    } else {
+      text = stripBetween(text, "OPTION TVA_OUI", "OPTION TVA_END");
+      text = text.replace("OPTION TVA_NON\n", "");
+    }
+    text = text.replace("OPTION TVA_END\n", "");
+    if (a.sousLocation === "accord") {
+      text = stripBetween(text, "OPTION SOUSLOC_INTERDITE", "OPTION SOUSLOC_ACCORD");
+      text = stripBetween(text, "OPTION SOUSLOC_CONDITIONS", "OPTION SOUSLOC_END");
+      text = text.replace("OPTION SOUSLOC_ACCORD\n", "");
+    } else if (a.sousLocation === "conditions") {
+      text = stripBetween(text, "OPTION SOUSLOC_INTERDITE", "OPTION SOUSLOC_ACCORD");
+      text = stripBetween(text, "OPTION SOUSLOC_ACCORD", "OPTION SOUSLOC_CONDITIONS");
+      text = text.replace("OPTION SOUSLOC_CONDITIONS\n", "");
+    } else {
+      text = stripBetween(text, "OPTION SOUSLOC_ACCORD", "OPTION SOUSLOC_CONDITIONS");
+      text = stripBetween(text, "OPTION SOUSLOC_CONDITIONS", "OPTION SOUSLOC_END");
+      text = text.replace("OPTION SOUSLOC_INTERDITE\n", "");
+    }
+    text = text.replace("OPTION SOUSLOC_END\n", "");
+    if (a.droitPreference) {
+      text = stripBetween(text, "OPTION PREF_NON", "OPTION PREF_OUI");
+      text = text.replace("OPTION PREF_OUI\n", "");
+    } else {
+      text = stripBetween(text, "OPTION PREF_OUI", "OPTION PREF_END");
+      text = text.replace("OPTION PREF_NON\n", "");
+    }
+    text = text.replace("OPTION PREF_END\n", "");
+    return text.replace(/\n{3,}/g, "\n\n");
+  }
+  async function loadTemplate5() {
+    const embedded = typeof window !== "undefined" ? String(window.__MEDLEX_BAIL_PROFESSIONNEL_TEMPLATE__ || "") : "";
+    if (embedded.length >= EMBEDDED_TEMPLATE_MIN_LENGTH5) {
+      return embedded;
+    }
+    if (isFileProtocol2()) {
+      throw new Error(
+        "Mod\xE8le embarqu\xE9 manquant (medlex-bail-professionnel-template-embedded.js). Rechargez la page ou ouvrez le site via GitHub Pages."
+      );
+    }
+    const res = await fetch(TEMPLATE_URL4);
+    if (!res.ok) {
+      throw new Error("Impossible de charger le mod\xE8le de bail (" + res.status + ").");
+    }
+    return await res.text();
+  }
+  function applyReplacements5(text, a) {
+    const pairs = [
+      ["[IDENTITE_BAILLEUR]", a.identiteBailleur],
+      ["[ADRESSE_BAILLEUR]", a.adresseBailleur],
+      ["[LIGNE_REPRESENTANT]", a.ligneRepresentant || ""],
+      ["[IDENTITE_PRENEUR]", a.identitePreneur],
+      ["[ORDINAL_PRENEUR]", a.ordinalPreneur],
+      ["[RPPS_PRENEUR]", a.rppsPreneur],
+      ["[ADRESSE_PRENEUR]", a.adressePreneur],
+      ["[ADRESSE_LOCAUX]", a.adresseLocaux],
+      ["[PRECISION_LOCAL]", a.precisionLocal],
+      ["[SUPERFICIE]", a.superficie],
+      ["[DESCRIPTION_PIECES]", a.descriptionPieces],
+      ["[NATURE_AUTRE_DETAIL]", a.natureAutreDetail || ""],
+      ["[DATE_EFFET]", a.dateEffet],
+      ["[DATE_EXPIRATION]", a.dateExpiration],
+      ["[LOYER_HC]", a.loyerHc],
+      ["[TAUX_TVA]", a.tauxTva || ""],
+      ["[LOYER_TTC]", a.loyerTtc || ""],
+      ["[PROVISION_CHARGES]", a.provisionCharges],
+      ["[DEPOT_GARANTIE]", a.depotGarantie]
+    ];
+    let out = text;
+    pairs.forEach(function(pair) {
+      out = out.split(pair[0]).join(String(pair[1] != null ? pair[1] : ""));
+    });
+    return out.replace(/\n{3,}/g, "\n\n").replace(/^[ \t]+$/gm, "").trim();
+  }
+  function buildContractText5(templateRaw, a) {
+    return applyReplacements5(applyConditionals3(templateRaw, a), a);
+  }
+  var init_template_engine5 = __esm({
+    "js/contract/bail-professionnel/template-engine.js"() {
+      init_constants5();
+      init_utils();
+    }
+  });
+
+  // js/contract/bail-professionnel/render-html.js
+  function collectHighlightValues5(a) {
+    const candidates = [
+      a.identiteBailleur,
+      a.adresseBailleur,
+      a.identitePreneur,
+      a.ordinalPreneur,
+      a.rppsPreneur,
+      a.adressePreneur,
+      a.adresseLocaux,
+      a.precisionLocal,
+      a.superficie,
+      a.descriptionPieces,
+      a.natureAutreDetail,
+      a.dateEffet,
+      a.dateExpiration,
+      a.loyerHc,
+      a.tauxTva,
+      a.loyerTtc,
+      a.provisionCharges,
+      a.depotGarantie
+    ];
+    const values = [];
+    for (const v of candidates) {
+      const s = String(v || "").trim();
+      if (!s || s === "Non renseign\xE9" || s === "\u2014") continue;
+      if (!values.includes(s)) values.push(s);
+    }
+    values.sort(function(x, y) {
+      return y.length - x.length;
+    });
+    return values;
+  }
+  function highlightAnswerValuesInLine5(line, values) {
+    let out = escapeHtml(line);
+    for (const v of values) {
+      const esc = escapeHtml(v);
+      out = out.replace(new RegExp(escapeRegExp(esc), "g"), "<strong>" + esc + "</strong>");
+    }
+    return out;
+  }
+  function buildContractRenderedHtml5(bodyText, a) {
+    const highlightValues = collectHighlightValues5(a);
+    return bodyText.split("\n").map(function(line) {
+      return line.trim() === "" ? "<br />" : '<p style="margin:0 0 8px;line-height:1.5">' + highlightAnswerValuesInLine5(line, highlightValues) + "</p>";
+    }).join("");
+  }
+  var init_render_html5 = __esm({
+    "js/contract/bail-professionnel/render-html.js"() {
+      init_utils();
+    }
+  });
+
+  // js/contract/bail-professionnel/medlex-bail-professionnel-contract.js
+  var medlex_bail_professionnel_contract_exports = {};
+  var init_medlex_bail_professionnel_contract = __esm({
+    "js/contract/bail-professionnel/medlex-bail-professionnel-contract.js"() {
+      init_snapshot5();
+      init_answers5();
+      init_template_engine5();
+      init_render_html5();
+      init_constants5();
+      window.MedLexBailProfessionnelContract = {
+        loadTemplate: loadTemplate5,
+        collectAnswers: collectAnswers5,
+        buildContractText: buildContractText5,
+        buildContractRenderedHtml: buildContractRenderedHtml5,
+        collectQuestionnaireSnapshot: collectQuestionnaireSnapshot5,
+        applyQuestionnaireSnapshot: applyQuestionnaireSnapshot5,
+        PDF_FILENAME: PDF_FILENAME5
+      };
+    }
+  });
+
   // js/contrat-page.js
   function loadScript(src) {
     return new Promise(function(resolve, reject) {
@@ -2925,7 +3249,7 @@
     if (!doc) return;
     var href = questionnaireHref || window.ParcoursType && window.ParcoursType.questionnaireUrl() || "questionnaire.html";
     var parcours = window.ParcoursType && window.ParcoursType.get();
-    var title = parcours === "collaboration" ? "Contrat de collaboration infirmier lib\xE9ral" : parcours === "fin-de-bail" ? "Fin de bail professionnel" : parcours === "mise-en-demeure" ? "Mise en demeure du bailleur" : "Contrat de remplacement infirmier lib\xE9ral";
+    var title = parcours === "collaboration" ? "Contrat de collaboration infirmier lib\xE9ral" : parcours === "fin-de-bail" ? "Fin de bail professionnel" : parcours === "mise-en-demeure" ? "Mise en demeure du bailleur" : parcours === "bail-professionnel" ? "Bail professionnel" : "Contrat de remplacement infirmier lib\xE9ral";
     if (guided) guided.innerHTML = "";
     if (toggle) toggle.classList.add("ac-hidden");
     doc.classList.remove("ac-hidden");
@@ -2956,6 +3280,12 @@
     docEl.innerHTML = '<p class="ac-contract-doc__title">Mise en demeure du bailleur</p><p class="ac-contract-doc__subtitle">' + parties + '</p><div class="ac-contract-doc__body">' + bodyHtml + "</div>";
     return { bodyText, bodyHtml };
   }
+  function renderBailProfessionnelContract(docEl, bodyText, answers, Contract) {
+    var subtitle = escapeHtml2(answers.identitePreneur || "") + " \xB7 " + escapeHtml2(answers.identiteBailleur || "");
+    var bodyHtml = Contract.buildContractRenderedHtml(bodyText, answers);
+    docEl.innerHTML = '<p class="ac-contract-doc__title">Bail professionnel</p><p class="ac-contract-doc__subtitle">' + subtitle + '</p><div class="ac-contract-doc__body">' + bodyHtml + "</div>";
+    return { bodyText, bodyHtml };
+  }
   function mountGuidedContractView(parcours, bodyText, bodyHtml) {
     if (!window.MedLexContractGuided) return;
     window.MedLexContractGuided.mount({
@@ -2968,16 +3298,22 @@
   function updatePageChrome(parcours) {
     var docEl = document.getElementById("contract-doc");
     if (docEl) {
-      var label = parcours === "collaboration" ? "Aper\xE7u du contrat de collaboration" : parcours === "fin-de-bail" ? "Aper\xE7u du courrier de fin de bail" : parcours === "mise-en-demeure" ? "Aper\xE7u de la mise en demeure" : "Aper\xE7u du contrat de remplacement";
+      var label = parcours === "collaboration" ? "Aper\xE7u du contrat de collaboration" : parcours === "fin-de-bail" ? "Aper\xE7u du courrier de fin de bail" : parcours === "mise-en-demeure" ? "Aper\xE7u de la mise en demeure" : parcours === "bail-professionnel" ? "Aper\xE7u du bail professionnel" : "Aper\xE7u du contrat de remplacement";
       docEl.setAttribute("aria-label", label);
     }
     var pageTitle = document.querySelector(".ac-title--page");
     if (pageTitle && (parcours === "fin-de-bail" || parcours === "mise-en-demeure")) {
       pageTitle.textContent = "Ton courrier";
     }
+    if (pageTitle && parcours === "bail-professionnel") {
+      pageTitle.textContent = "Ton bail";
+    }
     var micro = document.querySelector(".ac-main > .ac-microcopy");
     if (micro && (parcours === "fin-de-bail" || parcours === "mise-en-demeure")) {
       micro.textContent = "Paiement confirm\xE9 \u2014 parcours le courrier, ou consulte le texte int\xE9gral avant la signature.";
+    }
+    if (micro && parcours === "bail-professionnel") {
+      micro.textContent = "Paiement confirm\xE9 \u2014 parcours le bail section par section, ou consulte le texte int\xE9gral avant la signature.";
     }
   }
   var pdfExportModule = null;
@@ -3224,6 +3560,50 @@
       if (pdfBtn) pdfBtn.disabled = true;
     }
   }
+  async function initBailProfessionnelContrat(docEl, pdfBtn) {
+    var qHref = "questionnaire-bail-professionnel.html";
+    var snap = window.ParcoursBailProfessionnelSnapshot && window.ParcoursBailProfessionnelSnapshot.load();
+    if (!snap) {
+      showError(
+        "Aucune r\xE9ponse au questionnaire n\u2019a \xE9t\xE9 trouv\xE9e. Compl\xE8te le questionnaire pour g\xE9n\xE9rer ton bail.",
+        qHref
+      );
+      if (pdfBtn) pdfBtn.disabled = true;
+      return;
+    }
+    if (!window.ParcoursBailProfessionnelSnapshot.apply(snap)) {
+      showError("Impossible de restaurer les r\xE9ponses du questionnaire.", qHref);
+      if (pdfBtn) pdfBtn.disabled = true;
+      return;
+    }
+    try {
+      await loadScript("../medlex-bail-professionnel-template-embedded.js");
+      await Promise.resolve().then(() => (init_medlex_bail_professionnel_contract(), medlex_bail_professionnel_contract_exports));
+      var Contract = window.MedLexBailProfessionnelContract;
+      var answers = Contract.collectAnswers();
+      var templateRaw = await Contract.loadTemplate();
+      var bodyText = Contract.buildContractText(templateRaw, answers);
+      var rendered = renderBailProfessionnelContract(docEl, bodyText, answers, Contract);
+      docEl.removeAttribute("aria-busy");
+      mountGuidedContractView("bail-professionnel", rendered.bodyText, rendered.bodyHtml);
+      wirePdfDownload(
+        pdfBtn,
+        docEl,
+        Contract.PDF_FILENAME || "bail-professionnel-medlex.pdf",
+        {
+          bodyText: rendered.bodyText,
+          parcours: "bail-professionnel"
+        }
+      );
+    } catch (e) {
+      console.error(e);
+      showError(
+        e instanceof Error ? "Erreur lors de la g\xE9n\xE9ration : " + e.message : "Erreur lors de la g\xE9n\xE9ration du bail.",
+        qHref
+      );
+      if (pdfBtn) pdfBtn.disabled = true;
+    }
+  }
   async function initContratPage() {
     var docEl = document.getElementById("contract-doc");
     var pdfBtn = document.getElementById("download-pdf");
@@ -3236,6 +3616,8 @@
       await initFinDeBailContrat(docEl, pdfBtn);
     } else if (parcours === "mise-en-demeure") {
       await initMiseEnDemeureContrat(docEl, pdfBtn);
+    } else if (parcours === "bail-professionnel") {
+      await initBailProfessionnelContrat(docEl, pdfBtn);
     } else {
       await initRemplacementContrat(docEl, pdfBtn);
     }

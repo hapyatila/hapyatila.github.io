@@ -44,7 +44,9 @@ function showError(message, questionnaireHref) {
         ? 'Fin de bail professionnel'
         : parcours === 'mise-en-demeure'
           ? 'Mise en demeure du bailleur'
-          : 'Contrat de remplacement infirmier libéral';
+          : parcours === 'bail-professionnel'
+            ? 'Bail professionnel'
+            : 'Contrat de remplacement infirmier libéral';
   if (guided) guided.innerHTML = '';
   if (toggle) toggle.classList.add('ac-hidden');
   doc.classList.remove('ac-hidden');
@@ -141,6 +143,25 @@ function renderMiseEnDemeureContract(docEl, bodyText, answers, Contract) {
   return { bodyText: bodyText, bodyHtml: bodyHtml };
 }
 
+function renderBailProfessionnelContract(docEl, bodyText, answers, Contract) {
+  var subtitle =
+    escapeHtml(answers.identitePreneur || '') +
+    ' · ' +
+    escapeHtml(answers.identiteBailleur || '');
+
+  var bodyHtml = Contract.buildContractRenderedHtml(bodyText, answers);
+  docEl.innerHTML =
+    '<p class="ac-contract-doc__title">Bail professionnel</p>' +
+    '<p class="ac-contract-doc__subtitle">' +
+    subtitle +
+    '</p>' +
+    '<div class="ac-contract-doc__body">' +
+    bodyHtml +
+    '</div>';
+
+  return { bodyText: bodyText, bodyHtml: bodyHtml };
+}
+
 function mountGuidedContractView(parcours, bodyText, bodyHtml) {
   if (!window.MedLexContractGuided) return;
   window.MedLexContractGuided.mount({
@@ -161,17 +182,26 @@ function updatePageChrome(parcours) {
           ? 'Aperçu du courrier de fin de bail'
           : parcours === 'mise-en-demeure'
             ? 'Aperçu de la mise en demeure'
-            : 'Aperçu du contrat de remplacement';
+            : parcours === 'bail-professionnel'
+              ? 'Aperçu du bail professionnel'
+              : 'Aperçu du contrat de remplacement';
     docEl.setAttribute('aria-label', label);
   }
   var pageTitle = document.querySelector('.ac-title--page');
   if (pageTitle && (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure')) {
     pageTitle.textContent = 'Ton courrier';
   }
+  if (pageTitle && parcours === 'bail-professionnel') {
+    pageTitle.textContent = 'Ton bail';
+  }
   var micro = document.querySelector('.ac-main > .ac-microcopy');
   if (micro && (parcours === 'fin-de-bail' || parcours === 'mise-en-demeure')) {
     micro.textContent =
       'Paiement confirmé — parcours le courrier, ou consulte le texte intégral avant la signature.';
+  }
+  if (micro && parcours === 'bail-professionnel') {
+    micro.textContent =
+      'Paiement confirmé — parcours le bail section par section, ou consulte le texte intégral avant la signature.';
   }
 }
 
@@ -476,6 +506,59 @@ async function initMiseEnDemeureContrat(docEl, pdfBtn) {
   }
 }
 
+async function initBailProfessionnelContrat(docEl, pdfBtn) {
+  var qHref = 'questionnaire-bail-professionnel.html';
+
+  var snap =
+    window.ParcoursBailProfessionnelSnapshot && window.ParcoursBailProfessionnelSnapshot.load();
+  if (!snap) {
+    showError(
+      'Aucune réponse au questionnaire n’a été trouvée. Complète le questionnaire pour générer ton bail.',
+      qHref
+    );
+    if (pdfBtn) pdfBtn.disabled = true;
+    return;
+  }
+
+  if (!window.ParcoursBailProfessionnelSnapshot.apply(snap)) {
+    showError('Impossible de restaurer les réponses du questionnaire.', qHref);
+    if (pdfBtn) pdfBtn.disabled = true;
+    return;
+  }
+
+  try {
+    await loadScript('../medlex-bail-professionnel-template-embedded.js');
+    await import('./contract/bail-professionnel/medlex-bail-professionnel-contract.js');
+    var Contract = window.MedLexBailProfessionnelContract;
+
+    var answers = Contract.collectAnswers();
+    var templateRaw = await Contract.loadTemplate();
+    var bodyText = Contract.buildContractText(templateRaw, answers);
+    var rendered = renderBailProfessionnelContract(docEl, bodyText, answers, Contract);
+    docEl.removeAttribute('aria-busy');
+    mountGuidedContractView('bail-professionnel', rendered.bodyText, rendered.bodyHtml);
+
+    wirePdfDownload(
+      pdfBtn,
+      docEl,
+      Contract.PDF_FILENAME || 'bail-professionnel-medlex.pdf',
+      {
+        bodyText: rendered.bodyText,
+        parcours: 'bail-professionnel',
+      }
+    );
+  } catch (e) {
+    console.error(e);
+    showError(
+      e instanceof Error
+        ? 'Erreur lors de la génération : ' + e.message
+        : 'Erreur lors de la génération du bail.',
+      qHref
+    );
+    if (pdfBtn) pdfBtn.disabled = true;
+  }
+}
+
 async function initContratPage() {
   var docEl = document.getElementById('contract-doc');
   var pdfBtn = document.getElementById('download-pdf');
@@ -490,6 +573,8 @@ async function initContratPage() {
     await initFinDeBailContrat(docEl, pdfBtn);
   } else if (parcours === 'mise-en-demeure') {
     await initMiseEnDemeureContrat(docEl, pdfBtn);
+  } else if (parcours === 'bail-professionnel') {
+    await initBailProfessionnelContrat(docEl, pdfBtn);
   } else {
     await initRemplacementContrat(docEl, pdfBtn);
   }
